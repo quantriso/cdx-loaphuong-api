@@ -1,4 +1,4 @@
-import { ITransactionContext, IUnitOfWork } from 'src/libs/core/infrastructure';
+import { ITransactionContext, IUnitOfWork } from '@core/infrastructure';
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';

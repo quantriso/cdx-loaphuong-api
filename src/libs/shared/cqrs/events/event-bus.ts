@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventBus as CqrsEventBus } from '@nestjs/cqrs';
-import { IDomainEvent } from 'src/libs/core/domain';
-import { IEventBus } from 'src/libs/core/infrastructure';
+import { IDomainEvent } from '@core/domain';
+import { IEventBus } from '@core/infrastructure';
 
 /**
  * Event Bus implementation (Infrastructure Layer)

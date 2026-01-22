@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { QueryBus as CqrsQueryBus } from '@nestjs/cqrs';
-import { IQuery, IQueryBus } from 'src/libs/core/application';
+import { IQuery, IQueryBus } from '@core/application';
 
 /**
  * NestJS Query Bus implementation (Infrastructure Layer)

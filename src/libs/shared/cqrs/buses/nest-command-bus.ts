@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus as CqrsCommandBus } from '@nestjs/cqrs';
-import { ICommand, ICommandBus } from 'src/libs/core/application';
+import { ICommand, ICommandBus } from '@core/application';
 
 /**
  * NestJS Command Bus implementation (Infrastructure Layer)

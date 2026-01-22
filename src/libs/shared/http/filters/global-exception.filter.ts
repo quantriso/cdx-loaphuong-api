@@ -8,14 +8,14 @@ import {
 import { FastifyReply, FastifyRequest } from 'fastify';
 import {
   BaseException,
-  DomainException,
   ValidationException,
   ConcurrencyException,
   NotFoundException,
   UnauthorizedException,
   ForbiddenException,
   ConflictException,
-} from 'src/libs/core/common';
+} from '@core/common';
+import { DomainException } from '@core/domain';
 
 /**
  * Global Exception Filter
@@ -35,7 +35,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       return this.handleHttpException(exception, response, request);
     }
 
-    // Handle custom domain exceptions
+    // Handle DomainException (from @core/domain - pure Error, not BaseException)
+    if (exception instanceof DomainException) {
+      return this.handleDomainException(exception, response, request);
+    }
+
+    // Handle custom domain exceptions (from @core/common - extends BaseException)
     if (exception instanceof BaseException) {
       return this.handleBaseException(exception, response, request);
     }
@@ -66,6 +71,30 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         typeof exceptionResponse === 'object' && 'error' in exceptionResponse
           ? exceptionResponse
           : undefined,
+    };
+
+    response.status(status).send(errorResponse);
+  }
+
+  private handleDomainException(
+    exception: DomainException,
+    response: FastifyReply,
+    request: FastifyRequest,
+  ) {
+    // DomainException maps to 400 Bad Request
+    const status = HttpStatus.BAD_REQUEST;
+    const errorResponse = {
+      success: false,
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      method: request.method,
+      error: {
+        name: exception.name,
+        code: exception.code,
+        message: exception.message,
+        details: exception.details,
+      },
     };
 
     response.status(status).send(errorResponse);

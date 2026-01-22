@@ -165,7 +165,7 @@ export class TenantRepository
       name: aggregate.name,
       adminEmail: aggregate.adminEmail,
       adminPasswordHash: aggregate.adminPasswordHash,
-      status: aggregate.status,
+      status: aggregate.status.toString() as any, // ✅ Convert Value Object to string
       brandingConfig: aggregate.brandingConfig as any,
       limits: aggregate.limits as any,
       createdBy: aggregate.createdBy,
@@ -185,7 +185,7 @@ export class TenantRepository
       name: row.name,
       subdomain: row.tenantId,
       adminEmail: row.adminEmail,
-      status: row.status as TenantStatus,
+      status: TenantStatus.fromValue(row.status), // ✅ Convert string to Value Object
       adminPasswordHash: row.adminPasswordHash,
       brandingConfig: row.brandingConfig as any,
       limits: row.limits as any,

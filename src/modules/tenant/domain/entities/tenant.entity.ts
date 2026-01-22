@@ -1,7 +1,7 @@
 import { AggregateRoot, ISoftDeletable, DomainException, IEventMetadata } from "@core/domain";
 import { TenantCreatedEvent } from "../events/tenant-created.event";
 import { TenantDeletedEvent } from "../events/tenant-deleted.event";
-import { TenantStatus, TenantId } from "../value-objects";
+import { TenantStatus, TenantStatusEnum, TenantId } from "../value-objects";
 
 export interface BrandingConfig {
   logo?: string;
@@ -43,6 +43,7 @@ export interface TenantProps {
  * - Soft delete pattern with restore capability
  */
 export class Tenant extends AggregateRoot implements ISoftDeletable {
+  private _tenantId: TenantId;  // ✅ ADD: Store TenantId Value Object
   private _props: TenantProps;
   private _deletedAt?: Date | null = null;
 
@@ -58,6 +59,7 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
     deletedAt?: Date | null,
   ) {
     super(id.value, version, createdAt, updatedAt);
+    this._tenantId = id;  // ✅ ADD: Store TenantId object
     this._props = props;
     this._deletedAt = deletedAt;
   }
@@ -81,10 +83,12 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
       return; // Already deleted, do nothing
     }
 
-    this._props.status = TenantStatus.DELETED;
+    // ✅ Use Value Object state machine for status transition
+    this._props.status = this._props.status.transitionTo(TenantStatusEnum.DELETED);
     this._deletedAt = new Date();
-    this.markAsModified();
 
+    // addDomainEvent() already calls markAsUpdated() which increments version
+    // No need to call markAsModified() here to avoid double increment
     this.addDomainEvent(
       new TenantDeletedEvent(this.id, {
         id: this.id,
@@ -106,7 +110,8 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
   restore(): void {
     if (!this.isDeleted) return;
 
-    this._props.status = TenantStatus.ACTIVE;
+    // ✅ Use Value Object state machine for status transition
+    this._props.status = this._props.status.transitionTo(TenantStatusEnum.ACTIVE);
     this._deletedAt = null;
     this.markAsModified();
   }
@@ -141,7 +146,7 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
         name: params.name,
         subdomain: params.subdomain,
         adminEmail: params.adminEmail,
-        status: TenantStatus.ACTIVE,
+        status: TenantStatus.active(), // ✅ Use Value Object factory method
         adminPasswordHash: params.adminPasswordHash,
         brandingConfig: params.brandingConfig || null,
         limits: params.limits || null,
@@ -243,14 +248,21 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
     return this._props.createdBy;
   }
 
+  /**
+   * Get TenantId Value Object
+   */
+  get tenantId(): TenantId {
+    return this._tenantId;
+  }
+
   // --- Computed Properties ---
 
   isActive(): boolean {
-    return this._props.status === TenantStatus.ACTIVE && !this.isDeleted;
+    return this._props.status.isActive() && !this.isDeleted;
   }
 
   isSuspended(): boolean {
-    return this._props.status === TenantStatus.SUSPENDED;
+    return this._props.status.isSuspended();
   }
 
   // --- Business Behaviors (Actions) ---
@@ -322,11 +334,12 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
   suspend(metadata?: IEventMetadata): void {
     this.ensureNotDeleted();
 
-    if (this._props.status === TenantStatus.SUSPENDED) {
+    if (this._props.status.isSuspended()) {
       return; // Already suspended
     }
 
-    this._props.status = TenantStatus.SUSPENDED;
+    // ✅ Use Value Object state machine for status transition
+    this._props.status = this._props.status.transitionTo(TenantStatusEnum.SUSPENDED);
     this.markAsModified();
   }
 
@@ -338,11 +351,12 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
   activate(metadata?: IEventMetadata): void {
     this.ensureNotDeleted();
 
-    if (this._props.status === TenantStatus.ACTIVE) {
+    if (this._props.status.isActive()) {
       return; // Already active
     }
 
-    this._props.status = TenantStatus.ACTIVE;
+    // ✅ Use Value Object state machine for status transition
+    this._props.status = this._props.status.transitionTo(TenantStatusEnum.ACTIVE);
     this.markAsModified();
   }
 

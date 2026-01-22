@@ -3,7 +3,7 @@ import { IdempotencyService } from './idempotency.service';
 import type {
   IIdempotentCommand,
   IdempotencyOptions,
-} from 'src/libs/core/application';
+} from '@core/application';
 
 /**
  * Idempotent Decorator

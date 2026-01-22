@@ -11,9 +11,14 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import request from 'supertest';
 import { AppModule } from '../../../../src/app.module';
+import { GlobalExceptionFilter } from '../../../../src/libs/shared/http/filters/global-exception.filter';
 
 describe('TenantModule (Integration)', () => {
   let app: INestApplication;
@@ -25,20 +30,28 @@ describe('TenantModule (Integration)', () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication<NestFastifyApplication>(
+      new FastifyAdapter(),
+    );
 
     // Apply same global pipes/filters as production
-    // TODO: Uncomment when shared/http module is available
-    // app.useGlobalPipes(GlobalValidationPipe);
-    // app.useGlobalFilters(new GlobalExceptionFilter());
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+      }),
+    );
+    app.useGlobalFilters(new GlobalExceptionFilter());
+    // TODO: Uncomment when available
     // app.useGlobalInterceptors(new ResponseInterceptor());
 
     await app.init();
-  });
+    await app.getHttpAdapter().getInstance().ready();
+  }, 60000); // 60s timeout for app initialization
 
   afterAll(async () => {
     await app.close();
-  });
+  }, 30000); // 30s timeout for cleanup
 
   describe('POST /tenants', () => {
     it('should create a new tenant', async () => {
@@ -103,7 +116,10 @@ describe('TenantModule (Integration)', () => {
         .send(createDto)
         .expect(409);
 
-      expect(response.body).toHaveProperty('code', 'DUPLICATE_RESOURCE');
+      expect(response.body.error).toHaveProperty(
+        'code',
+        'TENANT_UNIQUENESS_VIOLATION',
+      );
     });
   });
 
@@ -205,12 +221,12 @@ describe('TenantModule (Integration)', () => {
     });
   });
 
-  describe('POST /tenants/:id/reset-password', () => {
+  describe('POST /tenants/:id/reset-admin-password', () => {
     it('should return tenant info (Epic 2 placeholder)', async () => {
       const resetDto = {};
 
       const response = await request(app.getHttpServer())
-        .post(`/tenants/${createdTenantId}/reset-password`)
+        .post(`/tenants/${createdTenantId}/reset-admin-password`)
         .send(resetDto)
         .expect(200);
 
@@ -222,7 +238,7 @@ describe('TenantModule (Integration)', () => {
 
     it('should return 404 for non-existent tenant', async () => {
       await request(app.getHttpServer())
-        .post('/tenants/non-existent-id/reset-password')
+        .post('/tenants/non-existent-id/reset-admin-password')
         .send({})
         .expect(404);
     });
@@ -308,7 +324,7 @@ describe('TenantModule (Integration)', () => {
         .send(firstDto)
         .expect(409);
 
-      expect(response.body.code).toBe('DUPLICATE_RESOURCE');
+      expect(response.body.error.code).toBe('TENANT_UNIQUENESS_VIOLATION');
     });
 
     it('should prevent modifying deleted tenant', async () => {

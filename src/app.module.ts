@@ -11,7 +11,7 @@ import {
   schema,
   ContextModule,
   CorrelationIdMiddleware,
-} from 'src/libs/shared';
+} from '@shared';
 import { TenantModule } from './modules/tenant/tenant.module';
 
 @Global()

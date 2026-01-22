@@ -1,7 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { OutboxRepository } from './outbox.repository';
 import { OutboxProcessorService } from './outbox-processor.service';
-import { OUTBOX_REPOSITORY_TOKEN, OUTBOX_PROCESSOR_TOKEN } from 'src/libs/core';
+import { OUTBOX_REPOSITORY_TOKEN, OUTBOX_PROCESSOR_TOKEN } from '@core';
 import { SharedCqrsModule } from '../../cqrs';
 
 /**

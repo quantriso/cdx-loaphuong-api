@@ -1,5 +1,8 @@
-import { Injectable, Inject } from "@nestjs/common";
+import { Injectable, Inject, Optional, Logger } from "@nestjs/common";
 import { eq, and, desc, sql } from "drizzle-orm";
+import { BaseReadDao } from "@core/infrastructure";
+import type { ICacheService } from "@core/infrastructure";
+import { CACHE_SERVICE_TOKEN } from "@core/constants";
 import type { DrizzleDB } from "@shared/database/drizzle";
 import { DATABASE_READ_TOKEN } from "@shared/database/drizzle";
 import { tenantsTable } from "../drizzle/schema/tenant.schema";
@@ -13,22 +16,69 @@ import type {
 import type { schema } from "@shared/database/drizzle/schema";
 
 /**
+ * Cache configuration
+ */
+const CACHE_TTL_SECONDS = 300; // 5 minutes
+const CACHE_KEY_PREFIX = "tenant:";
+
+/**
  * Tenant Read DAO Implementation
+ *
+ * Implements ITenantReadDao for read-optimized queries.
+ * Extends BaseReadDao for common functionality.
+ *
+ * ## Features:
+ * - Read replica support (via DATABASE_READ_TOKEN)
+ * - Optional caching with automatic invalidation
+ * - Optimized queries for read operations
+ * - Pagination support
  *
  * Following CQRS principles:
  * - Used ONLY by Query Handlers
  * - Returns DTOs directly (never domain entities)
  * - Optimized for read operations with minimal overhead
- * - Can be extended to use read replicas, caching, or denormalized views
  */
 @Injectable()
-export class TenantReadDao implements ITenantReadDao {
+export class TenantReadDao extends BaseReadDao implements ITenantReadDao {
+  private readonly logger = new Logger(TenantReadDao.name);
+
   constructor(
     @Inject(DATABASE_READ_TOKEN)
-    private readonly db: DrizzleDB<typeof schema>
-  ) {}
+    private readonly db: DrizzleDB<typeof schema>,
+    @Optional()
+    @Inject(CACHE_SERVICE_TOKEN)
+    private readonly cacheService?: ICacheService,
+  ) {
+    super();
+  }
 
+  /**
+   * Execute raw SQL query (required by BaseReadDao)
+   */
+  protected async executeQuery<T = unknown>(
+    sql: string,
+    params?: unknown[],
+  ): Promise<T[]> {
+    const result = await this.db.execute(sql);
+    return result.rows as T[];
+  }
+
+  /**
+   * Find tenant by ID with caching
+   */
   async findById(id: string): Promise<TenantReadDto | null> {
+    // Check cache first
+    if (this.cacheService) {
+      const cached = await this.cacheService.get<TenantReadDto>(
+        `${CACHE_KEY_PREFIX}${id}`,
+      );
+      if (cached) {
+        this.logger.debug(`Cache HIT: tenant ${id}`);
+        return cached;
+      }
+    }
+
+    // Query database
     const result = await this.db
       .select()
       .from(tenantsTable)
@@ -39,7 +89,19 @@ export class TenantReadDao implements ITenantReadDao {
       return null;
     }
 
-    return this.toDto(result[0]);
+    const tenant = this.toDto(result[0]);
+
+    // Cache result
+    if (this.cacheService && tenant) {
+      await this.cacheService.set(
+        `${CACHE_KEY_PREFIX}${id}`,
+        tenant,
+        CACHE_TTL_SECONDS,
+      );
+      this.logger.debug(`Cached tenant: ${id}`);
+    }
+
+    return tenant;
   }
 
   async findBySubdomain(subdomain: string): Promise<TenantReadDto | null> {
@@ -108,16 +170,25 @@ export class TenantReadDao implements ITenantReadDao {
     };
   }
 
+  /**
+   * Invalidate cache for a tenant
+   */
   async invalidateCache(id: string): Promise<void> {
-    // TODO: Epic 7 - Implement cache invalidation
-    // For now, this is a no-op
-    // In the future, this will invalidate Redis/memory cache
+    if (this.cacheService) {
+      await this.cacheService.delete(`${CACHE_KEY_PREFIX}${id}`);
+      this.logger.debug(`Cache invalidated: tenant ${id}`);
+    }
   }
 
+  /**
+   * Invalidate cache for multiple tenants
+   */
   async invalidateCacheMany(ids: string[]): Promise<void> {
-    // TODO: Epic 7 - Implement bulk cache invalidation
-    // For now, this is a no-op
-    // In the future, this will invalidate Redis/memory cache
+    if (this.cacheService && ids.length > 0) {
+      const keys = ids.map((id) => `${CACHE_KEY_PREFIX}${id}`);
+      await this.cacheService.mdelete(keys);
+      this.logger.debug(`Cache invalidated for ${ids.length} tenants`);
+    }
   }
 
   private toDto(record: any): TenantReadDto {

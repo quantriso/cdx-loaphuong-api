@@ -1,4 +1,4 @@
-import type { IDomainEvent } from 'src/libs/core/domain';
+import type { IDomainEvent } from '@core/domain';
 
 /**
  * Event Handler interface (Port)

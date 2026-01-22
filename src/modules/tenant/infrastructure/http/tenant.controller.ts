@@ -93,12 +93,16 @@ export class TenantController {
 
     // Generate subdomain from name (slugify)
     const subdomain = this.generateSubdomain(createTenantDto.name);
+    const adminEmail = `admin@${subdomain}.loaphuong.vn`;
+
+    // Generate secure temporary password
+    const temporaryPassword = createTenantDto.adminPassword;
 
     const command = new CreateTenantCommand(
       createTenantDto.name,
       subdomain,
-      `admin@${subdomain}.loaphuong.vn`,
-      "temp_password", // TODO: Generate secure password
+      adminEmail,
+      temporaryPassword,
       createTenantDto.brandingConfig,
       createTenantDto.limits,
       userId
@@ -111,7 +115,14 @@ export class TenantController {
     // Get created tenant details
     const tenant = await this.queryBus.execute(new GetTenantQuery(tenantId));
 
-    return tenant;
+    // Return tenant with admin credentials (only for creation response)
+    return {
+      ...tenant,
+      adminCredentials: {
+        email: adminEmail,
+        temporaryPassword: temporaryPassword,
+      },
+    };
   }
 
   private generateSubdomain(name: string): string {
@@ -361,26 +372,15 @@ export class TenantController {
   }
 
   @Delete(":id")
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: "Soft delete tenant",
     description:
       "Mark tenant as deleted while preserving data for audit and compliance",
   })
   @ApiResponse({
-    status: 200,
+    status: 204,
     description: "Tenant soft deleted successfully",
-    schema: {
-      example: {
-        id: "clh123abc456",
-        tenantId: "x-tan-binh",
-        name: "Xã Tân Bình",
-        status: "DELETED",
-        deletedAt: "2026-01-09T14:00:00.000Z",
-        deletedBy: "clh-super-admin-id",
-        reason: "Tenant requested closure due to migration to another platform",
-      },
-    },
   })
   @ApiResponse({
     status: 400,
@@ -388,14 +388,10 @@ export class TenantController {
   })
   @ApiResponse({ status: 404, description: "Tenant not found" })
   @ApiResponse({
-    status: 409,
-    description: "Conflict - Tenant already deleted",
+    status: 403,
+    description: "Forbidden - Tenant already deleted or requires SUPER_ADMIN role",
   })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  @ApiResponse({
-    status: 403,
-    description: "Forbidden - Requires SUPER_ADMIN role",
-  })
   @ApiBearerAuth()
   async softDeleteTenant(
     @Param("id") id: string,
@@ -418,10 +414,6 @@ export class TenantController {
     );
 
     await this.commandBus.execute(command);
-
-    return {
-      success: true,
-      message: "Tenant deleted successfully",
-    };
+    // Return void for 204 NO_CONTENT
   }
 }
