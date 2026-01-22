@@ -12,6 +12,7 @@ import {
   ContextModule,
   CorrelationIdMiddleware,
 } from 'src/libs/shared';
+import { TenantModule } from './modules/tenant/tenant.module';
 
 @Global()
 @Module({
@@ -37,6 +38,7 @@ import {
     // Health check endpoints
     HealthModule,
     // Feature modules will be added here as we implement them
+    TenantModule,
   ],
 })
 export class AppModule implements NestModule {
