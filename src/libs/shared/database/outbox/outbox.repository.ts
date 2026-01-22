@@ -9,6 +9,7 @@ import { IDomainEvent } from '@core/domain';
 import { DATABASE_WRITE_TOKEN } from '../drizzle/database.provider';
 import { outboxTable, type OutboxRecord } from './drizzle/schema/outbox.schema';
 import type { DrizzleDB, DrizzleTransaction } from '../drizzle/database.type';
+import type { schema } from '../drizzle/schema';
 
 /**
  * Outbox Repository Implementation
@@ -27,7 +28,7 @@ export class OutboxRepository implements IOutboxRepository {
 
   constructor(
     @Inject(DATABASE_WRITE_TOKEN)
-    private readonly db: DrizzleDB,
+    private readonly db: DrizzleDB<typeof schema>,
   ) {}
 
   /**

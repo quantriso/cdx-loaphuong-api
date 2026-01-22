@@ -5,18 +5,13 @@ import {
   timestamp,
   integer,
   index,
-  pgEnum,
 } from 'drizzle-orm/pg-core';
 
 /**
- * Outbox Entry Status Enum
+ * Outbox Entry Status Type
+ * Using VARCHAR instead of pgEnum to avoid Drizzle ORM prepared statement issues
  */
-export const outboxStatusEnum = pgEnum('outbox_status', [
-  'PENDING',
-  'PROCESSING',
-  'PROCESSED',
-  'FAILED',
-]);
+export type OutboxStatus = 'PENDING' | 'PROCESSING' | 'PROCESSED' | 'FAILED';
 
 /**
  * Outbox Table Schema
@@ -24,6 +19,9 @@ export const outboxStatusEnum = pgEnum('outbox_status', [
  * Stores domain events for the Transactional Outbox Pattern.
  * Events are saved in the same transaction as the aggregate,
  * then processed asynchronously by the OutboxProcessor.
+ *
+ * Note: status field uses VARCHAR instead of pgEnum due to Drizzle ORM
+ * compatibility issues with PostgreSQL enums in prepared statements.
  *
  * Indexes:
  * - status + createdAt: For efficient polling of pending events
@@ -48,8 +46,8 @@ export const outboxTable = pgTable(
     /** Event payload as JSON string */
     payload: text('payload').notNull(),
 
-    /** Processing status */
-    status: outboxStatusEnum('status').notNull().default('PENDING'),
+    /** Processing status - VARCHAR instead of enum for Drizzle compatibility */
+    status: varchar('status', { length: 20 }).notNull().default('PENDING').$type<OutboxStatus>(),
 
     /** Creation timestamp */
     createdAt: timestamp('created_at', { withTimezone: true })

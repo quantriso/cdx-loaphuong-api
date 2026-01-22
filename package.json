@@ -43,6 +43,7 @@
     "@types/redis": "^4.0.11",
     "amqp-connection-manager": "^5.0.0",
     "amqplib": "^0.10.9",
+    "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "drizzle-orm": "^0.45.1",
@@ -64,6 +65,7 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
+    "@types/bcrypt": "^6.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.10.7",
     "@types/pg": "^8.11.10",
@@ -91,7 +93,9 @@
       "ts"
     ],
     "rootDir": ".",
-    "testRegex": ".*\\.spec\\.ts$",
+    "testMatch": [
+      "<rootDir>/test/**/*.spec.ts"
+    ],
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
@@ -104,13 +108,15 @@
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@core$": "<rootDir>/libs/core/index.ts",
-      "^@core/(.*)$": "<rootDir>/libs/core/$1",
+      "^@core$": "<rootDir>/src/libs/core/index.ts",
+      "^@core/(.*)$": "<rootDir>/src/libs/core/$1",
+      "^@shared$": "<rootDir>/src/libs/shared/index.ts",
+      "^@shared/(.*)$": "<rootDir>/src/libs/shared/$1",
       "^@modules/(.*)$": "<rootDir>/src/modules/$1"
     },
     "roots": [
-      "<rootDir>/src",
-      "<rootDir>/libs"
+      "<rootDir>/test",
+      "<rootDir>/src"
     ]
   }
 }

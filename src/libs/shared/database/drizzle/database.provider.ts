@@ -69,7 +69,11 @@ export function createDrizzleProvider<TSchema extends Record<string, unknown>>(
         throw new Error(`${envVar} is not set`);
       }
       const pool = createPool(connectionString, poolName, databaseService);
-      return drizzle(pool, { schema });
+      return drizzle({
+        client: pool,
+        schema,
+        casing: 'snake_case',
+      });
     },
     inject: [ConfigService, DatabaseService],
   };
