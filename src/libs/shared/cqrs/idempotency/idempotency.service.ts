@@ -1,10 +1,10 @@
 import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
-import type { ICacheService } from 'src/libs/core/infrastructure';
-import { CACHE_SERVICE_TOKEN } from 'src/libs/core/constants';
+import type { ICacheService } from '@core/infrastructure';
+import { CACHE_SERVICE_TOKEN } from '@core/constants';
 import type {
   IdempotencyOptions,
   IdempotencyResult,
-} from 'src/libs/core/application';
+} from '@core/application';
 
 /**
  * Idempotency Service

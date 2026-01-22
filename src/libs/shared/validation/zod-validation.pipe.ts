@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ZodSchema, ZodError } from 'zod';
 import { StructuredLogger } from '../observability/structured-logger.service';
-import { VALIDATION_SCHEMA_KEY } from '../security/decorators';
+import { VALIDATION_SCHEMA_KEY } from '../security';
 
 /**
  * Zod Validation Decorator
