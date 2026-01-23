@@ -13,6 +13,7 @@ import {
   CorrelationIdMiddleware,
 } from '@shared';
 import { TenantModule } from './modules/tenant/tenant.module';
+import { ContentModule } from './modules/content/content.module';
 
 @Global()
 @Module({
@@ -39,6 +40,7 @@ import { TenantModule } from './modules/tenant/tenant.module';
     HealthModule,
     // Feature modules will be added here as we implement them
     TenantModule,
+    ContentModule,
   ],
 })
 export class AppModule implements NestModule {

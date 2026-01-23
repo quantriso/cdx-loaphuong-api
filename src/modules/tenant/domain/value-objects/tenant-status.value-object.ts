@@ -27,7 +27,9 @@ const VALID_TRANSITIONS: Record<TenantStatusEnum, TenantStatusEnum[]> = {
     TenantStatusEnum.ACTIVE, // Can reactivate suspended tenant
     TenantStatusEnum.DELETED, // Can delete suspended tenant
   ],
-  [TenantStatusEnum.DELETED]: [], // Cannot transition from DELETED (terminal state)
+  [TenantStatusEnum.DELETED]: [
+    TenantStatusEnum.ACTIVE, // Can restore deleted tenant
+  ],
 };
 
 /**
@@ -127,6 +129,10 @@ export class TenantStatus extends BaseValueObject {
    * @returns true if transition is valid, false otherwise
    */
   canTransitionTo(newStatus: TenantStatusEnum): boolean {
+    // Allow same-state transition (no-op)
+    if (this._value === newStatus) {
+      return true;
+    }
     return VALID_TRANSITIONS[this._value].includes(newStatus);
   }
 

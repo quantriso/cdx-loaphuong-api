@@ -15,6 +15,13 @@
       "when": 1769025290503,
       "tag": "0001_outgoing_ego",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769156095357,
+      "tag": "0002_public_micromacro",
+      "breakpoints": true
     }
   ]
 }

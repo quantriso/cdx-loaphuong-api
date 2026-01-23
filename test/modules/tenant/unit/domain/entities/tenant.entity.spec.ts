@@ -1,5 +1,5 @@
 import { Tenant, TenantProps } from '../../../../../../src/modules/tenant/domain/entities/tenant.entity';
-import { TenantId, TenantStatus } from '../../../../../../src/modules/tenant/domain/value-objects';
+import { TenantId, TenantStatus, TenantStatusEnum } from '../../../../../../src/modules/tenant/domain/value-objects';
 import { DomainException } from '@core/domain';
 
 describe('Tenant Entity', () => {
@@ -28,7 +28,7 @@ describe('Tenant Entity', () => {
       expect(tenant.subdomain).toBe('test-tenant');
       expect(tenant.adminEmail).toBe('admin@test-tenant.com');
       expect(tenant.adminPasswordHash).toBe('hashed-password-123');
-      expect(tenant.status).toBe(TenantStatus.ACTIVE);
+      expect(tenant.status.value).toBe(TenantStatusEnum.ACTIVE);
       expect(tenant.isDeleted).toBe(false);
       expect(tenant.createdBy).toBe('system');
     });
@@ -132,7 +132,7 @@ describe('Tenant Entity', () => {
         name: 'Test Tenant',
         subdomain: 'test-tenant',
         adminEmail: 'admin@test.com',
-        status: TenantStatus.ACTIVE,
+        status: TenantStatus.active(),
         adminPasswordHash: 'hashed-pwd',
         brandingConfig: null,
         limits: null,
@@ -221,7 +221,7 @@ describe('Tenant Entity', () => {
 
       tenant.suspend();
 
-      expect(tenant.status).toBe(TenantStatus.SUSPENDED);
+      expect(tenant.status.value).toBe(TenantStatusEnum.SUSPENDED);
     });
 
     it('should do nothing if already suspended', () => {
@@ -259,7 +259,7 @@ describe('Tenant Entity', () => {
 
       tenant.activate();
 
-      expect(tenant.status).toBe(TenantStatus.ACTIVE);
+      expect(tenant.status.value).toBe(TenantStatusEnum.ACTIVE);
     });
 
     it('should do nothing if already active', () => {

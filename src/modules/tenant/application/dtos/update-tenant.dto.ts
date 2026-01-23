@@ -9,7 +9,7 @@ import {
   IsObject,
   ValidateNested,
 } from "class-validator";
-import { TenantStatus } from "../../domain/value-objects";
+import { TenantStatusEnum } from "../../domain/value-objects";
 import { Type } from "class-transformer";
 
 class BrandingConfigDto {
@@ -57,10 +57,10 @@ export class UpdateTenantDto {
   name?: string;
 
   @IsOptional()
-  @IsEnum(TenantStatus, {
-    message: "Status must be either ACTIVE or INACTIVE",
+  @IsEnum(TenantStatusEnum, {
+    message: "Status must be ACTIVE, SUSPENDED, or DELETED",
   })
-  status?: TenantStatus;
+  status?: string;
 
   @IsOptional()
   @ValidateNested({ each: false })
