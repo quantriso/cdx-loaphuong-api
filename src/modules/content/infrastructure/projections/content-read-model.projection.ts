@@ -10,7 +10,7 @@ import {
   type DrizzleDB,
 } from "@shared";
 import { CONTENT_READ_DAO_TOKEN } from "../../constants/tokens";
-import { ContentCreatedEvent } from "../../domain/events";
+import { ContentCreatedEvent, ContentUpdatedEvent } from "../../domain/events";
 import { contentsTable } from "../persistence/drizzle/schema";
 import { ContentReadDao } from "../persistence/read/content-read-dao";
 import { eq } from "drizzle-orm";
@@ -50,7 +50,7 @@ class NestProjectionLogger implements IProjectionLogger {
  * when Domain Events are emitted from the Write Side.
  *
  * This projection:
- * 1. Listens to ContentCreatedEvent (and future events like ContentUpdatedEvent, etc.)
+ * 1. Listens to ContentCreatedEvent, ContentUpdatedEvent (and future events)
  * 2. Updates/syncs data (cache, search index, denormalized table)
  * 3. Ensures idempotency (no duplicate event processing)
  *
@@ -65,6 +65,7 @@ class NestProjectionLogger implements IProjectionLogger {
  * - Check version before update
  *
  * Story 3.1: Create Content Draft - Read Side Synchronization
+ * Story 3.2: Update Content - Read Side Synchronization
  *
  * @example
  * // When content is created:
@@ -74,10 +75,10 @@ class NestProjectionLogger implements IProjectionLogger {
  * // 4. Projection.handle() → Update cache/search/etc.
  */
 @Injectable()
-@EventsHandler(ContentCreatedEvent)
+@EventsHandler(ContentCreatedEvent, ContentUpdatedEvent)
 export class ContentReadModelProjection
-  extends BaseProjection<ContentCreatedEvent>
-  implements IEventHandler<ContentCreatedEvent>
+  extends BaseProjection<ContentCreatedEvent | ContentUpdatedEvent>
+  implements IEventHandler<ContentCreatedEvent | ContentUpdatedEvent>
 {
   // In-memory event tracking for demo (production should use Redis/DB)
   private processedEvents: Set<string> = new Set();
@@ -95,10 +96,14 @@ export class ContentReadModelProjection
    * Main handle method (required by BaseProjection abstract class)
    * This is the actual projection logic that processes events
    */
-  async handle(event: ContentCreatedEvent): Promise<void> {
+  async handle(event: ContentCreatedEvent | ContentUpdatedEvent): Promise<void> {
     switch (event.eventType) {
       case "ContentCreated":
-        await this.onContentCreated(event);
+        await this.onContentCreated(event as ContentCreatedEvent);
+        break;
+
+      case "ContentUpdated":
+        await this.onContentUpdated(event as ContentUpdatedEvent);
         break;
 
       default:
@@ -162,5 +167,59 @@ export class ContentReadModelProjection
 
     // Example: Update tenant content count (pseudo-code)
     // await this.updateTenantStats(event.data.tenantId, 'increment');
+  }
+
+  /**
+   * Handle ContentUpdatedEvent
+   *
+   * Story 3.2: Update Content
+   *
+   * When content is updated:
+   * - Update cache with new data
+   * - Re-index in Elasticsearch
+   * - Invalidate related queries
+   */
+  private async onContentUpdated(event: ContentUpdatedEvent): Promise<void> {
+    this.logger.log(
+      `Processing ContentUpdatedEvent: ${event.aggregateId} - ${event.data.title}`
+    );
+
+    // Demo: Log the event (production would update cache/search index)
+    this.logger.debug(
+      `Content updated: ${JSON.stringify({
+        id: event.aggregateId,
+        tenantId: event.data.tenantId,
+        changedBy: event.data.changedBy,
+        changedFields: event.data.changedFields,
+        title: event.data.title,
+        previousStatus: event.data.previousStatus,
+        newStatus: event.data.newStatus,
+        correlationId: event.metadata?.correlationId,
+      })}`
+    );
+
+    // Example: Update cache (pseudo-code)
+    // await this.cacheService.invalidate(`content:${event.aggregateId}`);
+    // await this.cacheService.invalidate(`tenant:${event.data.tenantId}:contents`);
+
+    // Example: Re-index in Elasticsearch (pseudo-code)
+    // await this.searchClient.update({
+    //   index: 'contents',
+    //   id: event.aggregateId,
+    //   body: {
+    //     doc: {
+    //       title: event.data.title,
+    //       content: event.data.content,
+    //       excerpt: event.data.excerpt,
+    //       status: event.data.newStatus || event.data.afterState?.status,
+    //       updatedAt: event.data.changedAt,
+    //     },
+    //   },
+    // });
+
+    // Example: Invalidate query cache if status changed
+    // if (event.data.changedFields.includes('status')) {
+    //   await this.queryCache.invalidate(`tenant:${event.data.tenantId}:contents:by-status`);
+    // }
   }
 }

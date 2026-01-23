@@ -1,23 +1,54 @@
+import { ApiProperty } from "@nestjs/swagger";
+
 /**
  * Content Response DTO
  *
  * Data Transfer Object for returning content data to clients
  */
 export class ContentResponseDto {
+  @ApiProperty({ description: "Content ID (UUID)", example: "550e8400-e29b-41d4-a716-446655440000" })
   id: string;
+
+  @ApiProperty({ description: "Tenant ID (UUID)", example: "123e4567-e89b-12d3-a456-426614174000" })
   tenantId: string;
+
+  @ApiProperty({ description: "Author ID (UUID)", example: "987fcdeb-51a2-43d7-b987-123456789abc" })
   authorId: string;
+
+  @ApiProperty({ description: "Content title", example: "Introduction to DDD" })
   title: string;
+
+  @ApiProperty({ description: "Content body", example: "Domain-Driven Design is..." })
   content: string;
+
+  @ApiProperty({ description: "Brief excerpt", example: "Learn DDD fundamentals", nullable: true })
   excerpt: string | null;
+
+  @ApiProperty({ description: "Content type", example: "ARTICLE" })
   type: string;
+
+  @ApiProperty({ description: "Content status", example: "DRAFT" })
   status: string;
+
+  @ApiProperty({ description: "Content priority", example: "MEDIUM" })
   priority: string;
+
+  @ApiProperty({ description: "Category ID", example: "550e8400-e29b-41d4-a716-446655440000", nullable: true })
   categoryId: string | null;
+
+  @ApiProperty({ description: "Content tags", example: ["ddd", "architecture"], type: [String] })
   tags: string[];
+
+  @ApiProperty({ description: "Featured image URL", example: "https://example.com/image.jpg", nullable: true })
   featuredImage: string | null;
+
+  @ApiProperty({ description: "Version number for optimistic locking", example: 1 })
   version: number;
+
+  @ApiProperty({ description: "Creation timestamp", example: "2026-01-23T10:00:00.000Z" })
   createdAt: Date;
+
+  @ApiProperty({ description: "Last update timestamp", example: "2026-01-23T10:30:00.000Z" })
   updatedAt: Date;
 
   constructor(params: {

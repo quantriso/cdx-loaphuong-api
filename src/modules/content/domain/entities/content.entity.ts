@@ -1,5 +1,5 @@
 import { AggregateRoot, IEventMetadata, DomainException } from "@core/domain";
-import { ContentCreatedEvent } from "../events";
+import { ContentCreatedEvent, ContentUpdatedEvent } from "../events";
 import { ContentStatus, ContentType, ContentPriority } from "../value-objects";
 
 /**
@@ -199,7 +199,7 @@ export class Content extends AggregateRoot {
     return this._props.featuredImage;
   }
 
-  // --- Business Methods (Story 3.1) ---
+  // --- Business Methods ---
 
   /**
    * Check if content can be edited
@@ -207,6 +207,231 @@ export class Content extends AggregateRoot {
    */
   canEdit(): boolean {
     return this._props.status.isDraft();
+  }
+
+  /**
+   * Check if content is rejected
+   * Story 3.2: REJECTED content can be edited and reset to DRAFT
+   */
+  isRejected(): boolean {
+    return this._props.status.isRejected();
+  }
+
+  /**
+   * Update content fields
+   * Story 3.2: Update title, content, and excerpt
+   *
+   * @param title New title
+   * @param content New content body
+   * @param excerpt New excerpt (optional)
+   * @param metadata Event metadata
+   */
+  updateContent(
+    title: string,
+    content: string,
+    excerpt: string | null,
+    metadata?: IEventMetadata
+  ): void {
+    // Validate
+    Content.validateTitle(title);
+    Content.validateContent(content);
+    if (excerpt) {
+      Content.validateExcerpt(excerpt);
+    }
+
+    const changedFields: string[] = [];
+    const beforeState: Record<string, unknown> = {};
+    const afterState: Record<string, unknown> = {};
+
+    if (this._props.title !== title.trim()) {
+      changedFields.push('title');
+      beforeState.title = this._props.title;
+      afterState.title = title.trim();
+      this._props.title = title.trim();
+    }
+
+    if (this._props.content !== content.trim()) {
+      changedFields.push('content');
+      beforeState.content = this._props.content;
+      afterState.content = content.trim();
+      this._props.content = content.trim();
+    }
+
+    const trimmedExcerpt = excerpt?.trim() || null;
+    if (this._props.excerpt !== trimmedExcerpt) {
+      changedFields.push('excerpt');
+      beforeState.excerpt = this._props.excerpt;
+      afterState.excerpt = trimmedExcerpt;
+      this._props.excerpt = trimmedExcerpt;
+    }
+
+    // Only emit event if something changed
+    if (changedFields.length > 0) {
+      this.addDomainEvent(
+        new ContentUpdatedEvent(
+          this.id,
+          {
+            tenantId: this.tenantId,
+            contentId: this.id,
+            authorId: this.authorId,
+            changedBy: this.authorId,
+            changedAt: new Date(),
+            changedFields,
+            beforeState,
+            afterState,
+            title: this._props.title,
+            content: this._props.content,
+            excerpt: this._props.excerpt,
+            type: this._props.type.toString(),
+            priority: this._props.priority.toString(),
+            categoryId: this._props.categoryId,
+            tags: [...this._props.tags],
+          },
+          metadata
+        )
+      );
+    }
+  }
+
+  /**
+   * Edit rejected content and reset status to DRAFT
+   * Story 3.2: Allows authors to make changes after rejection
+   *
+   * @param changedBy User ID who is editing
+   * @param metadata Event metadata
+   */
+  editRejectedContent(changedBy: string, metadata?: IEventMetadata): void {
+    if (!this.isRejected()) {
+      throw new DomainException(
+        "Can only edit content that is in REJECTED status"
+      );
+    }
+
+    const previousStatus = this._props.status.toString();
+
+    // Reset status to DRAFT
+    this._props.status = ContentStatus.draft();
+
+    // Emit ContentUpdatedEvent
+    this.addDomainEvent(
+      new ContentUpdatedEvent(
+        this.id,
+        {
+          tenantId: this.tenantId,
+          contentId: this.id,
+          authorId: this.authorId,
+          changedBy,
+          changedAt: new Date(),
+          changedFields: ['status'],
+          beforeState: {
+            status: previousStatus,
+          },
+          afterState: {
+            status: this._props.status.toString(),
+          },
+          previousStatus,
+          newStatus: this._props.status.toString(),
+          title: this._props.title,
+          content: this._props.content,
+          excerpt: this._props.excerpt,
+          type: this._props.type.toString(),
+          priority: this._props.priority.toString(),
+          categoryId: this._props.categoryId,
+          tags: [...this._props.tags],
+        },
+        metadata
+      )
+    );
+  }
+
+  /**
+   * Set category
+   * Story 3.2: Update content category
+   *
+   * @param categoryId Category ID (null to remove)
+   */
+  setCategory(categoryId: string | null): void {
+    if (!this.canEdit()) {
+      throw new DomainException("Cannot change category of non-draft content");
+    }
+    this._props.categoryId = categoryId;
+  }
+
+  /**
+   * Set featured image
+   * Story 3.2: Update featured image URL
+   *
+   * @param imageUrl Image URL (null to remove)
+   */
+  setFeaturedImage(imageUrl: string | null): void {
+    if (!this.canEdit()) {
+      throw new DomainException(
+        "Cannot change featured image of non-draft content"
+      );
+    }
+    this._props.featuredImage = imageUrl;
+  }
+
+  /**
+   * Add tag
+   * Story 3.2: Add a tag to content
+   *
+   * @param tag Tag to add
+   */
+  addTag(tag: string): void {
+    if (!this.canEdit()) {
+      throw new DomainException("Cannot add tags to non-draft content");
+    }
+    const normalizedTag = tag.trim().toLowerCase();
+    if (!this._props.tags.includes(normalizedTag)) {
+      this._props.tags.push(normalizedTag);
+    }
+  }
+
+  /**
+   * Remove tag
+   * Story 3.2: Remove a tag from content
+   *
+   * @param tag Tag to remove
+   */
+  removeTag(tag: string): void {
+    if (!this.canEdit()) {
+      throw new DomainException("Cannot remove tags from non-draft content");
+    }
+    const normalizedTag = tag.trim().toLowerCase();
+    const index = this._props.tags.indexOf(normalizedTag);
+    if (index > -1) {
+      this._props.tags.splice(index, 1);
+    }
+  }
+
+  /**
+   * Finalize metadata changes and emit ContentUpdatedEvent
+   * Story 3.2: Called after metadata changes to emit event and increment version
+   */
+  finalizeMetadataChanges(changedBy: string, changedFields: string[]): void {
+    if (changedFields.length === 0) return;
+
+    this.addDomainEvent(
+      new ContentUpdatedEvent(
+        this.id,
+        {
+          tenantId: this.tenantId,
+          contentId: this.id,
+          authorId: this.authorId,
+          changedBy,
+          changedAt: new Date(),
+          changedFields,
+          title: this._props.title,
+          content: this._props.content,
+          excerpt: this._props.excerpt,
+          type: this._props.type.toString(),
+          priority: this._props.priority.toString(),
+          categoryId: this._props.categoryId,
+          tags: [...this._props.tags],
+        }
+      )
+    );
   }
 
   // --- Validation Methods ---

@@ -2,6 +2,7 @@
  * Content Module Integration Tests
  *
  * Story 3.1: Create Content Draft
+ * Story 3.2: Update Content
  *
  * These tests verify the integration between different layers:
  * - Controller → Command Bus → Handler → Repository
@@ -362,6 +363,149 @@ describe('ContentModule (Integration) - Story 3.1', () => {
           .post('/api/v1/contents')
           .send(dto)
           .expect(201);
+      });
+    });
+  });
+
+  describe('PATCH /api/v1/contents/:id', () => {
+    describe('Story 3.2: Update Content', () => {
+      let draftContentId: string;
+
+      beforeEach(async () => {
+        // Create a draft content for update tests
+        const createDto = {
+          title: `Draft for Update ${Date.now()}`,
+          content: 'Original content body for testing updates.',
+          excerpt: 'Original excerpt',
+          type: ContentTypeEnum.ARTICLE,
+          priority: ContentPriorityEnum.MEDIUM,
+          tags: ['original', 'test'],
+          featuredImage: 'https://example.com/original.jpg',
+        };
+
+        const createResponse = await request(app.getHttpServer())
+          .post('/api/v1/contents')
+          .send(createDto)
+          .expect(201);
+
+        draftContentId = createResponse.body.id;
+      });
+
+      it('should update content title', async () => {
+        const updateDto = {
+          title: 'Updated Title',
+        };
+
+        const response = await request(app.getHttpServer())
+          .patch(`/api/v1/contents/${draftContentId}`)
+          .send(updateDto)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('message', 'Content updated successfully');
+      });
+
+      it('should update content body', async () => {
+        const updateDto = {
+          content: 'Updated content body with new information.',
+        };
+
+        await request(app.getHttpServer())
+          .patch(`/api/v1/contents/${draftContentId}`)
+          .send(updateDto)
+          .expect(200);
+      });
+
+      it('should update excerpt', async () => {
+        const updateDto = {
+          excerpt: 'Updated excerpt text',
+        };
+
+        await request(app.getHttpServer())
+          .patch(`/api/v1/contents/${draftContentId}`)
+          .send(updateDto)
+          .expect(200);
+      });
+
+      it('should update tags', async () => {
+        const updateDto = {
+          tags: ['updated', 'new-tags', 'testing'],
+        };
+
+        await request(app.getHttpServer())
+          .patch(`/api/v1/contents/${draftContentId}`)
+          .send(updateDto)
+          .expect(200);
+      });
+
+      it('should update featured image', async () => {
+        const updateDto = {
+          featuredImage: 'https://example.com/updated-image.jpg',
+        };
+
+        await request(app.getHttpServer())
+          .patch(`/api/v1/contents/${draftContentId}`)
+          .send(updateDto)
+          .expect(200);
+      });
+
+      it('should update category', async () => {
+        const updateDto = {
+          categoryId: '550e8400-e29b-41d4-a716-446655440000',
+        };
+
+        await request(app.getHttpServer())
+          .patch(`/api/v1/contents/${draftContentId}`)
+          .send(updateDto)
+          .expect(200);
+      });
+
+      it('should update multiple fields at once', async () => {
+        const updateDto = {
+          title: 'Fully Updated Title',
+          content: 'Fully updated content body.',
+          excerpt: 'Fully updated excerpt',
+          tags: ['fully', 'updated'],
+          featuredImage: 'https://example.com/fully-updated.jpg',
+        };
+
+        const response = await request(app.getHttpServer())
+          .patch(`/api/v1/contents/${draftContentId}`)
+          .send(updateDto)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('message', 'Content updated successfully');
+      });
+
+      it('should return 404 for non-existent content', async () => {
+        const updateDto = {
+          title: 'Updated Title',
+        };
+
+        await request(app.getHttpServer())
+          .patch('/api/v1/contents/non-existent-id')
+          .send(updateDto)
+          .expect(404);
+      });
+
+      it('should allow partial updates (only changed fields)', async () => {
+        const updateDto = {
+          title: 'Only Title Updated',
+          // Other fields not provided
+        };
+
+        await request(app.getHttpServer())
+          .patch(`/api/v1/contents/${draftContentId}`)
+          .send(updateDto)
+          .expect(200);
+      });
+
+      it('should handle empty update gracefully', async () => {
+        const updateDto = {};
+
+        await request(app.getHttpServer())
+          .patch(`/api/v1/contents/${draftContentId}`)
+          .send(updateDto)
+          .expect(200);
       });
     });
   });
