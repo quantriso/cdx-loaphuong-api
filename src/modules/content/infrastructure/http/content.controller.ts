@@ -24,12 +24,14 @@ import {
   UpdateContentDto,
   ContentResponseDto,
   ApproveContentDto,
+  RejectContentDto,
 } from '../../application/dtos';
 import {
   CreateContentCommand,
   UpdateContentCommand,
   SubmitContentForApprovalCommand,
   ApproveContentCommand,
+  RejectContentCommand,
 } from '../../application/commands';
 import { GetContentQuery } from '../../application/queries';
 
@@ -40,6 +42,7 @@ import { GetContentQuery } from '../../application/queries';
  * Story 3.2: Update Content
  * Story 3.3: Submit Content for Approval
  * Story 3.4: Approve Content
+ * Story 3.5: Reject Content with Feedback
  *
  * HTTP endpoints for content management following CQRS pattern.
  * - Write operations (POST, PATCH) → Command Bus
@@ -304,6 +307,65 @@ export class ContentController {
 
     return {
       message: 'Content approved successfully',
+    };
+  }
+
+  /**
+   * Reject content with feedback
+   *
+   * Story 3.5: Reject Content with Feedback
+   * POST /api/v1/contents/:id/reject
+   *
+   * Business Rules:
+   * - Only PENDING content can be rejected
+   * - Only Admin can reject
+   * - Rejection reason is required (feedback for author)
+   * - Status transitions from PENDING to REJECTED
+   */
+  @Post(':id/reject')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Reject content with feedback',
+    description:
+      'Rejects PENDING content with feedback and emits ContentRejectedEvent. Status transitions from PENDING to REJECTED. Admin only.',
+  })
+  @ApiParam({ name: 'id', description: 'Content ID (UUID)' })
+  @ApiBody({ type: RejectContentDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Content rejected successfully',
+    schema: {
+      example: {
+        message: 'Content rejected successfully',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Cannot reject content (not in PENDING status or invalid reason)',
+  })
+  @ApiResponse({ status: 404, description: 'Content not found' })
+  async rejectContent(
+    @Param('id') id: string,
+    @Body() dto: RejectContentDto,
+    @Req() req: any,
+  ): Promise<{ message: string }> {
+    // Extract tenant and admin user from request (will be set by auth middleware)
+    const tenantId = req.user?.tenantId || 'mock-tenant-id';
+    const adminId = req.user?.id || 'mock-admin-id';
+
+    const command = new RejectContentCommand(
+      id,
+      tenantId,
+      adminId,
+      dto.reason,
+    );
+
+    await this.commandBus.execute(command);
+
+    return {
+      message: 'Content rejected successfully',
     };
   }
 }

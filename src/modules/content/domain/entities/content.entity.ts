@@ -4,6 +4,7 @@ import {
   ContentUpdatedEvent,
   ContentSubmittedForApprovalEvent,
   ContentApprovedEvent,
+  ContentRejectedEvent,
 } from '../events';
 import { ContentStatus, ContentType, ContentPriority } from '../value-objects';
 
@@ -557,6 +558,72 @@ export class Content extends AggregateRoot {
           categoryId: this._props.categoryId,
           tags: [...this._props.tags],
           approvalReason,
+        },
+        metadata,
+      ),
+    );
+  }
+
+  /**
+   * Reject pending content with feedback
+   * Story 3.5: Transition PENDING → REJECTED
+   *
+   * Business Rules:
+   * - Only PENDING content can be rejected
+   * - Rejection reason is required
+   * - Status must transition validly (enforced by ContentStatus VO)
+   * - Emits ContentRejectedEvent
+   *
+   * @param rejectedBy Admin user ID who rejected the content
+   * @param rejectionReason Required reason for rejection (feedback for author)
+   * @param metadata Event metadata
+   * @throws DomainException if content is not in PENDING status or reason is empty
+   */
+  reject(
+    rejectedBy: string,
+    rejectionReason: string,
+    metadata?: IEventMetadata,
+  ): void {
+    if (!this._props.status.isPending()) {
+      throw new DomainException(
+        `Cannot reject content. Current status: ${this._props.status.toString()}. Only PENDING content can be rejected.`,
+      );
+    }
+
+    if (!rejectionReason || rejectionReason.trim().length === 0) {
+      throw new DomainException('Rejection reason is required');
+    }
+
+    const previousStatus = this._props.status.toString();
+    const newStatus = ContentStatus.rejected();
+
+    // Validate transition (will throw if invalid)
+    if (!this._props.status.canTransitionTo(newStatus)) {
+      throw new DomainException(
+        `Invalid status transition from ${previousStatus} to ${newStatus.toString()}`,
+      );
+    }
+
+    // Update status
+    this._props.status = newStatus;
+
+    // Emit domain event
+    this.addDomainEvent(
+      new ContentRejectedEvent(
+        this.id,
+        {
+          tenantId: this.tenantId,
+          authorId: this.authorId,
+          rejectedBy,
+          rejectedAt: new Date(),
+          previousStatus,
+          newStatus: newStatus.toString(),
+          title: this._props.title,
+          type: this._props.type.toString(),
+          priority: this._props.priority.toString(),
+          categoryId: this._props.categoryId,
+          tags: [...this._props.tags],
+          rejectionReason: rejectionReason.trim(),
         },
         metadata,
       ),

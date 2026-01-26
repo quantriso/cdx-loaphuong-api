@@ -11,6 +11,7 @@ import {
   ContentUpdatedEvent,
   ContentSubmittedForApprovalEvent,
   ContentApprovedEvent,
+  ContentRejectedEvent,
 } from '../../domain/events';
 import { contentsTable } from '../persistence/drizzle/schema';
 import { ContentReadDao } from '../persistence/read/content-read-dao';
@@ -82,6 +83,7 @@ class NestProjectionLogger implements IProjectionLogger {
   ContentUpdatedEvent,
   ContentSubmittedForApprovalEvent,
   ContentApprovedEvent,
+  ContentRejectedEvent,
 )
 export class ContentReadModelProjection
   extends BaseProjection<
@@ -89,6 +91,7 @@ export class ContentReadModelProjection
     | ContentUpdatedEvent
     | ContentSubmittedForApprovalEvent
     | ContentApprovedEvent
+    | ContentRejectedEvent
   >
   implements
     IEventHandler<
@@ -96,6 +99,7 @@ export class ContentReadModelProjection
       | ContentUpdatedEvent
       | ContentSubmittedForApprovalEvent
       | ContentApprovedEvent
+      | ContentRejectedEvent
     >
 {
   // In-memory event tracking for demo (production should use Redis/DB)
@@ -118,7 +122,9 @@ export class ContentReadModelProjection
     event:
       | ContentCreatedEvent
       | ContentUpdatedEvent
-      | ContentSubmittedForApprovalEvent,
+      | ContentSubmittedForApprovalEvent
+      | ContentApprovedEvent
+      | ContentRejectedEvent,
   ): Promise<void> {
     switch (event.eventType) {
       case 'ContentCreated':
@@ -133,6 +139,14 @@ export class ContentReadModelProjection
         await this.onContentSubmittedForApproval(
           event as ContentSubmittedForApprovalEvent,
         );
+        break;
+
+      case 'ContentApproved':
+        await this.onContentApproved(event as ContentApprovedEvent);
+        break;
+
+      case 'ContentRejected':
+        await this.onContentRejected(event as ContentRejectedEvent);
         break;
 
       default:
@@ -352,5 +366,54 @@ export class ContentReadModelProjection
 
     // Example: Update approval stats (pseudo-code)
     // await this.statsService.incrementApprovals(event.data.tenantId);
+  }
+
+  /**
+   * Handle ContentRejectedEvent
+   *
+   * Story 3.5: Reject Content with Feedback
+   *
+   * When content is rejected by Admin with feedback:
+   * - Update cache to reflect REJECTED status
+   * - Notify author with rejection reason
+   * - Remove from pending queue
+   * - Update rejection stats
+   */
+  private async onContentRejected(event: ContentRejectedEvent): Promise<void> {
+    this.logger.log(
+      `Processing ContentRejectedEvent: ${event.aggregateId} - ${event.data.title}`,
+    );
+
+    // Demo: Log the event (production would update cache/search index)
+    this.logger.debug(
+      `Content rejected: ${JSON.stringify({
+        id: event.aggregateId,
+        tenantId: event.data.tenantId,
+        authorId: event.data.authorId,
+        rejectedBy: event.data.rejectedBy,
+        title: event.data.title,
+        previousStatus: event.data.previousStatus,
+        newStatus: event.data.newStatus,
+        rejectedAt: event.data.rejectedAt,
+        rejectionReason: event.data.rejectionReason,
+        correlationId: event.metadata?.correlationId,
+      })}`,
+    );
+
+    // Example: Update cache (pseudo-code)
+    // await this.cacheService.invalidate(`content:${event.aggregateId}`);
+    // await this.cacheService.invalidate(`tenant:${event.data.tenantId}:contents:pending`);
+    // await this.cacheService.invalidate(`tenant:${event.data.tenantId}:contents:rejected`);
+
+    // Example: Notify author with feedback (pseudo-code)
+    // await this.notificationService.notifyAuthor({
+    //   userId: event.data.authorId,
+    //   message: `Your content "${event.data.title}" was rejected`,
+    //   rejectionReason: event.data.rejectionReason,
+    //   canEdit: true,
+    // });
+
+    // Example: Update rejection stats (pseudo-code)
+    // await this.statsService.incrementRejections(event.data.tenantId);
   }
 }
