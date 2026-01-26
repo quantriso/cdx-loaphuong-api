@@ -10,6 +10,7 @@ import {
   ContentCreatedEvent,
   ContentUpdatedEvent,
   ContentSubmittedForApprovalEvent,
+  ContentApprovedEvent,
 } from '../../domain/events';
 import { contentsTable } from '../persistence/drizzle/schema';
 import { ContentReadDao } from '../persistence/read/content-read-dao';
@@ -80,16 +81,21 @@ class NestProjectionLogger implements IProjectionLogger {
   ContentCreatedEvent,
   ContentUpdatedEvent,
   ContentSubmittedForApprovalEvent,
+  ContentApprovedEvent,
 )
 export class ContentReadModelProjection
   extends BaseProjection<
-    ContentCreatedEvent | ContentUpdatedEvent | ContentSubmittedForApprovalEvent
+    | ContentCreatedEvent
+    | ContentUpdatedEvent
+    | ContentSubmittedForApprovalEvent
+    | ContentApprovedEvent
   >
   implements
     IEventHandler<
       | ContentCreatedEvent
       | ContentUpdatedEvent
       | ContentSubmittedForApprovalEvent
+      | ContentApprovedEvent
     >
 {
   // In-memory event tracking for demo (production should use Redis/DB)
@@ -298,5 +304,53 @@ export class ContentReadModelProjection
     //   submittedAt: event.data.submittedAt,
     //   priority: event.data.priority,
     // });
+  }
+
+  /**
+   * Handle ContentApprovedEvent
+   *
+   * Story 3.4: Approve Content
+   *
+   * When content is approved by Admin:
+   * - Update cache to reflect APPROVED status
+   * - Notify author of approval
+   * - Remove from pending queue
+   * - Update approval stats
+   */
+  private async onContentApproved(event: ContentApprovedEvent): Promise<void> {
+    this.logger.log(
+      `Processing ContentApprovedEvent: ${event.aggregateId} - ${event.data.title}`,
+    );
+
+    // Demo: Log the event (production would update cache/search index)
+    this.logger.debug(
+      `Content approved: ${JSON.stringify({
+        id: event.aggregateId,
+        tenantId: event.data.tenantId,
+        authorId: event.data.authorId,
+        approvedBy: event.data.approvedBy,
+        title: event.data.title,
+        previousStatus: event.data.previousStatus,
+        newStatus: event.data.newStatus,
+        approvedAt: event.data.approvedAt,
+        approvalReason: event.data.approvalReason,
+        correlationId: event.metadata?.correlationId,
+      })}`,
+    );
+
+    // Example: Update cache (pseudo-code)
+    // await this.cacheService.invalidate(`content:${event.aggregateId}`);
+    // await this.cacheService.invalidate(`tenant:${event.data.tenantId}:contents:pending`);
+    // await this.cacheService.invalidate(`tenant:${event.data.tenantId}:contents:approved`);
+
+    // Example: Notify author (pseudo-code)
+    // await this.notificationService.notifyAuthor({
+    //   userId: event.data.authorId,
+    //   message: `Your content "${event.data.title}" has been approved`,
+    //   approvalReason: event.data.approvalReason,
+    // });
+
+    // Example: Update approval stats (pseudo-code)
+    // await this.statsService.incrementApprovals(event.data.tenantId);
   }
 }

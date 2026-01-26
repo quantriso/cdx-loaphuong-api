@@ -23,11 +23,13 @@ import {
   CreateContentDto,
   UpdateContentDto,
   ContentResponseDto,
+  ApproveContentDto,
 } from '../../application/dtos';
 import {
   CreateContentCommand,
   UpdateContentCommand,
   SubmitContentForApprovalCommand,
+  ApproveContentCommand,
 } from '../../application/commands';
 import { GetContentQuery } from '../../application/queries';
 
@@ -37,6 +39,7 @@ import { GetContentQuery } from '../../application/queries';
  * Story 3.1: Create Content Draft
  * Story 3.2: Update Content
  * Story 3.3: Submit Content for Approval
+ * Story 3.4: Approve Content
  *
  * HTTP endpoints for content management following CQRS pattern.
  * - Write operations (POST, PATCH) → Command Bus
@@ -244,6 +247,63 @@ export class ContentController {
 
     return {
       message: 'Content submitted for approval successfully',
+    };
+  }
+
+  /**
+   * Approve content
+   *
+   * Story 3.4: Approve Content
+   * POST /api/v1/contents/:id/approve
+   *
+   * Business Rules:
+   * - Only PENDING content can be approved
+   * - Only Admin can approve
+   * - Status transitions from PENDING to APPROVED
+   */
+  @Post(':id/approve')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Approve content',
+    description:
+      'Approves PENDING content and emits ContentApprovedEvent. Status transitions from PENDING to APPROVED. Admin only.',
+  })
+  @ApiParam({ name: 'id', description: 'Content ID (UUID)' })
+  @ApiBody({ type: ApproveContentDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Content approved successfully',
+    schema: {
+      example: {
+        message: 'Content approved successfully',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Cannot approve content (not in PENDING status)',
+  })
+  @ApiResponse({ status: 404, description: 'Content not found' })
+  async approveContent(
+    @Param('id') id: string,
+    @Body() dto: ApproveContentDto,
+    @Req() req: any,
+  ): Promise<{ message: string }> {
+    // Extract tenant and admin user from request (will be set by auth middleware)
+    const tenantId = req.user?.tenantId || 'mock-tenant-id';
+    const adminId = req.user?.id || 'mock-admin-id';
+
+    const command = new ApproveContentCommand(
+      id,
+      tenantId,
+      adminId,
+      dto.reason,
+    );
+
+    await this.commandBus.execute(command);
+
+    return {
+      message: 'Content approved successfully',
     };
   }
 }

@@ -3,6 +3,7 @@ import {
   ContentCreatedEvent,
   ContentUpdatedEvent,
   ContentSubmittedForApprovalEvent,
+  ContentApprovedEvent,
 } from '../events';
 import { ContentStatus, ContentType, ContentPriority } from '../value-objects';
 
@@ -495,6 +496,67 @@ export class Content extends AggregateRoot {
           categoryId: this._props.categoryId,
           tags: [...this._props.tags],
           submittedAt: new Date(),
+        },
+        metadata,
+      ),
+    );
+  }
+
+  /**
+   * Approve pending content
+   * Story 3.4: Transition PENDING → APPROVED
+   *
+   * Business Rules:
+   * - Only PENDING content can be approved
+   * - Status must transition validly (enforced by ContentStatus VO)
+   * - Emits ContentApprovedEvent
+   *
+   * @param approvedBy Admin user ID who approved the content
+   * @param approvalReason Optional reason for approval
+   * @param metadata Event metadata
+   * @throws DomainException if content is not in PENDING status
+   */
+  approve(
+    approvedBy: string,
+    approvalReason?: string,
+    metadata?: IEventMetadata,
+  ): void {
+    if (!this._props.status.isPending()) {
+      throw new DomainException(
+        `Cannot approve content. Current status: ${this._props.status.toString()}. Only PENDING content can be approved.`,
+      );
+    }
+
+    const previousStatus = this._props.status.toString();
+    const newStatus = ContentStatus.approved();
+
+    // Validate transition (will throw if invalid)
+    if (!this._props.status.canTransitionTo(newStatus)) {
+      throw new DomainException(
+        `Invalid status transition from ${previousStatus} to ${newStatus.toString()}`,
+      );
+    }
+
+    // Update status
+    this._props.status = newStatus;
+
+    // Emit domain event
+    this.addDomainEvent(
+      new ContentApprovedEvent(
+        this.id,
+        {
+          tenantId: this.tenantId,
+          authorId: this.authorId,
+          approvedBy,
+          approvedAt: new Date(),
+          previousStatus,
+          newStatus: newStatus.toString(),
+          title: this._props.title,
+          type: this._props.type.toString(),
+          priority: this._props.priority.toString(),
+          categoryId: this._props.categoryId,
+          tags: [...this._props.tags],
+          approvalReason,
         },
         metadata,
       ),
