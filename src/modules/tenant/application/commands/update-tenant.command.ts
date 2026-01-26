@@ -1,5 +1,8 @@
-import { ICommand } from "@core/application";
-import { BrandingConfig, TenantLimits } from "../../domain/entities/tenant.entity";
+import { ICommand } from '@core/application';
+import {
+  BrandingConfig,
+  TenantLimits,
+} from '../../domain/entities/tenant.entity';
 
 export class UpdateTenantCommand implements ICommand {
   constructor(
@@ -9,6 +12,6 @@ export class UpdateTenantCommand implements ICommand {
     public readonly brandingConfig?: BrandingConfig,
     public readonly limits?: TenantLimits,
     public readonly reason?: string,
-    public readonly userId?: string
+    public readonly userId?: string,
   ) {}
 }

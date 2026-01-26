@@ -1,4 +1,4 @@
-import { BaseDomainEvent, IEventMetadata } from "@core/domain";
+import { BaseDomainEvent, IEventMetadata } from '@core/domain';
 
 /**
  * Content Created Event Data
@@ -21,8 +21,8 @@ export class ContentCreatedEvent extends BaseDomainEvent<ContentCreatedEventData
   constructor(
     aggregateId: string,
     data: ContentCreatedEventData,
-    metadata?: IEventMetadata
+    metadata?: IEventMetadata,
   ) {
-    super(aggregateId, "Content", "ContentCreated", data, metadata);
+    super(aggregateId, 'Content', 'ContentCreated', data, metadata);
   }
 }

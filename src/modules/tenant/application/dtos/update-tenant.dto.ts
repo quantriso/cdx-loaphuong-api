@@ -8,57 +8,57 @@ import {
   Matches,
   IsObject,
   ValidateNested,
-} from "class-validator";
-import { TenantStatusEnum } from "../../domain/value-objects";
-import { Type } from "class-transformer";
+} from 'class-validator';
+import { TenantStatusEnum } from '../../domain/value-objects';
+import { Type } from 'class-transformer';
 
 class BrandingConfigDto {
   @IsOptional()
   @IsString()
-  @IsUrl({}, { message: "Logo must be a valid URL" })
+  @IsUrl({}, { message: 'Logo must be a valid URL' })
   logo?: string;
 
   @IsOptional()
   @IsString()
   @Matches(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, {
-    message: "Primary color must be a valid hex color code (e.g., #FF5733)",
+    message: 'Primary color must be a valid hex color code (e.g., #FF5733)',
   })
   primaryColor?: string;
 
   @IsOptional()
   @IsString()
   @Matches(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, {
-    message: "Secondary color must be a valid hex color code (e.g., #C70039)",
+    message: 'Secondary color must be a valid hex color code (e.g., #C70039)',
   })
   secondaryColor?: string;
 }
 
 class LimitsDto {
   @IsOptional()
-  @IsInt({ message: "Max users must be an integer" })
-  @Min(1, { message: "Max users must be at least 1" })
+  @IsInt({ message: 'Max users must be an integer' })
+  @Min(1, { message: 'Max users must be at least 1' })
   maxUsers?: number;
 
   @IsOptional()
-  @IsInt({ message: "Max content must be an integer" })
-  @Min(1, { message: "Max content must be at least 1" })
+  @IsInt({ message: 'Max content must be an integer' })
+  @Min(1, { message: 'Max content must be at least 1' })
   maxContent?: number;
 
   @IsOptional()
-  @IsInt({ message: "Max storage must be an integer" })
-  @Min(1, { message: "Max storage must be at least 1" })
+  @IsInt({ message: 'Max storage must be an integer' })
+  @Min(1, { message: 'Max storage must be at least 1' })
   maxStorage?: number;
 }
 
 export class UpdateTenantDto {
   @IsOptional()
-  @IsString({ message: "Name must be a string" })
-  @Matches(/^\S.*\S$/, { message: "Name cannot be empty or whitespace only" })
+  @IsString({ message: 'Name must be a string' })
+  @Matches(/^\S.*\S$/, { message: 'Name cannot be empty or whitespace only' })
   name?: string;
 
   @IsOptional()
   @IsEnum(TenantStatusEnum, {
-    message: "Status must be ACTIVE, SUSPENDED, or DELETED",
+    message: 'Status must be ACTIVE, SUSPENDED, or DELETED',
   })
   status?: string;
 
@@ -73,7 +73,7 @@ export class UpdateTenantDto {
   limits?: LimitsDto;
 
   @IsOptional()
-  @IsString({ message: "Reason must be a string" })
+  @IsString({ message: 'Reason must be a string' })
   reason?: string;
 }
 

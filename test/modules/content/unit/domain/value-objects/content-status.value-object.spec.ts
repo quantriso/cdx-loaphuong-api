@@ -1,4 +1,7 @@
-import { ContentStatus, ContentStatusEnum } from '../../../../../../src/modules/content/domain/value-objects';
+import {
+  ContentStatus,
+  ContentStatusEnum,
+} from '../../../../../../src/modules/content/domain/value-objects';
 import { DomainException } from '@core/domain';
 
 describe('ContentStatus Value Object', () => {
@@ -48,7 +51,9 @@ describe('ContentStatus Value Object', () => {
 
     it('should throw DomainException for invalid value', () => {
       expect(() => ContentStatus.fromValue('INVALID')).toThrow(DomainException);
-      expect(() => ContentStatus.fromValue('INVALID')).toThrow('Invalid content status: INVALID');
+      expect(() => ContentStatus.fromValue('INVALID')).toThrow(
+        'Invalid content status: INVALID',
+      );
     });
   });
 
@@ -120,9 +125,11 @@ describe('ContentStatus Value Object', () => {
     it('should throw DomainException on invalid transition', () => {
       const draft = ContentStatus.draft();
 
-      expect(() => draft.transitionTo(ContentStatusEnum.APPROVED)).toThrow(DomainException);
       expect(() => draft.transitionTo(ContentStatusEnum.APPROVED)).toThrow(
-        'Invalid status transition from DRAFT to APPROVED'
+        DomainException,
+      );
+      expect(() => draft.transitionTo(ContentStatusEnum.APPROVED)).toThrow(
+        'Invalid status transition from DRAFT to APPROVED',
       );
     });
   });

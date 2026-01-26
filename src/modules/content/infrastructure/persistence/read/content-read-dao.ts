@@ -1,9 +1,9 @@
-import { Injectable, Inject, Optional, Logger } from "@nestjs/common";
-import { eq, and, desc } from "drizzle-orm";
+import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
+import { eq, and, desc } from 'drizzle-orm';
 
 // Import from Core (interfaces)
-import type { ICacheService } from "@core/infrastructure";
-import { CACHE_SERVICE_TOKEN } from "@core/constants";
+import type { ICacheService } from '@core/infrastructure';
+import { CACHE_SERVICE_TOKEN } from '@core/constants';
 
 // Import from Shared (implementations)
 import {
@@ -11,20 +11,20 @@ import {
   DATABASE_READ_TOKEN,
   type DrizzleDB,
   schema,
-} from "@shared";
+} from '@shared';
 
 // Import Application DTOs & Ports
-import { ContentResponseDto } from "../../../application/dtos";
-import { IContentReadDao } from "../../../application/queries/ports";
+import { ContentResponseDto } from '../../../application/dtos';
+import { IContentReadDao } from '../../../application/queries/ports';
 
 // Import Infrastructure
-import { contentsTable } from "../drizzle/schema";
+import { contentsTable } from '../drizzle/schema';
 
 /**
  * Cache configuration
  */
 const CACHE_TTL_SECONDS = 300; // 5 minutes
-const CACHE_KEY_PREFIX = "content:";
+const CACHE_KEY_PREFIX = 'content:';
 
 /**
  * Content Read DAO Implementation
@@ -53,7 +53,7 @@ export class ContentReadDao extends BaseReadDao implements IContentReadDao {
     private readonly db: DrizzleDB<typeof schema>,
     @Optional()
     @Inject(CACHE_SERVICE_TOKEN)
-    private readonly cacheService?: ICacheService
+    private readonly cacheService?: ICacheService,
   ) {
     super();
   }
@@ -63,7 +63,7 @@ export class ContentReadDao extends BaseReadDao implements IContentReadDao {
    */
   protected async executeQuery<T = unknown>(
     sql: string,
-    params?: unknown[]
+    params?: unknown[],
   ): Promise<T[]> {
     const result = await this.db.execute(sql);
     return result.rows as T[];
@@ -74,12 +74,12 @@ export class ContentReadDao extends BaseReadDao implements IContentReadDao {
    */
   async findById(
     id: string,
-    tenantId: string
+    tenantId: string,
   ): Promise<ContentResponseDto | null> {
     // Check cache first
     if (this.cacheService) {
       const cached = await this.cacheService.get<ContentResponseDto>(
-        `${CACHE_KEY_PREFIX}${id}`
+        `${CACHE_KEY_PREFIX}${id}`,
       );
       if (cached) {
         this.logger.debug(`Cache HIT: content ${id}`);
@@ -91,7 +91,9 @@ export class ContentReadDao extends BaseReadDao implements IContentReadDao {
     const result = await this.db
       .select()
       .from(contentsTable)
-      .where(and(eq(contentsTable.id, id), eq(contentsTable.tenantId, tenantId)))
+      .where(
+        and(eq(contentsTable.id, id), eq(contentsTable.tenantId, tenantId)),
+      )
       .limit(1);
 
     if (!result[0]) {
@@ -105,7 +107,7 @@ export class ContentReadDao extends BaseReadDao implements IContentReadDao {
       await this.cacheService.set(
         `${CACHE_KEY_PREFIX}${id}`,
         content,
-        CACHE_TTL_SECONDS
+        CACHE_TTL_SECONDS,
       );
       this.logger.debug(`Cached content: ${id}`);
     }
@@ -119,7 +121,7 @@ export class ContentReadDao extends BaseReadDao implements IContentReadDao {
   async findByAuthor(
     authorId: string,
     tenantId: string,
-    status?: string
+    status?: string,
   ): Promise<ContentResponseDto[]> {
     const conditions = [
       eq(contentsTable.authorId, authorId),

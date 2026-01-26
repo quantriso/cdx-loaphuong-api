@@ -1,5 +1,5 @@
-import { IAggregateRepository } from "@core/domain";
-import { Tenant } from "../entities/tenant.entity";
+import { IAggregateRepository } from '@core/domain';
+import { Tenant } from '../entities/tenant.entity';
 
 /**
  * Tenant Repository Interface (Port) - WRITE SIDE ONLY

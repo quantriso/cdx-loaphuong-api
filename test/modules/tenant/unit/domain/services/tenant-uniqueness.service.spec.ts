@@ -1,4 +1,7 @@
-import { TenantUniquenessService, ITenantUniquenessChecker } from '../../../../../../src/modules/tenant/domain/services/tenant-uniqueness.service';
+import {
+  TenantUniquenessService,
+  ITenantUniquenessChecker,
+} from '../../../../../../src/modules/tenant/domain/services/tenant-uniqueness.service';
 import { ConflictException } from '@core/common';
 
 describe('TenantUniquenessService', () => {
@@ -41,7 +44,9 @@ describe('TenantUniquenessService', () => {
 
       await expect(
         service.ensureSubdomainIsUnique('existing-tenant'),
-      ).rejects.toThrow("Tenant with subdomain 'existing-tenant' already exists");
+      ).rejects.toThrow(
+        "Tenant with subdomain 'existing-tenant' already exists",
+      );
     });
 
     it('should pass excludeId when provided', async () => {
@@ -89,7 +94,9 @@ describe('TenantUniquenessService', () => {
 
       await expect(
         service.ensureAdminEmailIsUnique('existing@test.com'),
-      ).rejects.toThrow("Tenant with adminEmail 'existing@test.com' already exists");
+      ).rejects.toThrow(
+        "Tenant with adminEmail 'existing@test.com' already exists",
+      );
     });
 
     it('should pass excludeId when provided', async () => {
@@ -146,7 +153,9 @@ describe('TenantUniquenessService', () => {
           subdomain: 'existing-tenant',
           adminEmail: 'admin@test.com',
         }),
-      ).rejects.toThrow("Tenant with subdomain 'existing-tenant' already exists");
+      ).rejects.toThrow(
+        "Tenant with subdomain 'existing-tenant' already exists",
+      );
     });
 
     it('should throw ConflictException when email is not unique', async () => {
@@ -166,7 +175,9 @@ describe('TenantUniquenessService', () => {
           subdomain: 'test-tenant',
           adminEmail: 'existing@test.com',
         }),
-      ).rejects.toThrow("Tenant with adminEmail 'existing@test.com' already exists");
+      ).rejects.toThrow(
+        "Tenant with adminEmail 'existing@test.com' already exists",
+      );
     });
 
     it('should throw ConflictException with multiple violations when both are not unique', async () => {

@@ -53,8 +53,15 @@ export class TenantUniquenessService {
    * @param excludeId ID của tenant đang update (để exclude khỏi check)
    * @throws ConflictException nếu subdomain đã tồn tại (HTTP 409)
    */
-  async ensureSubdomainIsUnique(subdomain: string, excludeId?: string): Promise<void> {
-    const isUnique = await this.checker.isUnique('subdomain', subdomain, excludeId);
+  async ensureSubdomainIsUnique(
+    subdomain: string,
+    excludeId?: string,
+  ): Promise<void> {
+    const isUnique = await this.checker.isUnique(
+      'subdomain',
+      subdomain,
+      excludeId,
+    );
 
     if (!isUnique) {
       // Use ConflictException.duplicate() for semantic correctness
@@ -69,8 +76,15 @@ export class TenantUniquenessService {
    * @param excludeId ID của tenant đang update
    * @throws ConflictException nếu email đã tồn tại (HTTP 409)
    */
-  async ensureAdminEmailIsUnique(adminEmail: string, excludeId?: string): Promise<void> {
-    const isUnique = await this.checker.isUnique('adminEmail', adminEmail, excludeId);
+  async ensureAdminEmailIsUnique(
+    adminEmail: string,
+    excludeId?: string,
+  ): Promise<void> {
+    const isUnique = await this.checker.isUnique(
+      'adminEmail',
+      adminEmail,
+      excludeId,
+    );
 
     if (!isUnique) {
       throw ConflictException.duplicate('Tenant', 'adminEmail', adminEmail);

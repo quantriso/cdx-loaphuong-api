@@ -23,7 +23,10 @@ import {
 import request from 'supertest';
 import { AppModule } from '../../../../src/app.module';
 import { GlobalExceptionFilter } from '../../../../src/libs/shared/http/filters/global-exception.filter';
-import { ContentTypeEnum, ContentPriorityEnum } from '../../../../src/modules/content/domain/value-objects';
+import {
+  ContentTypeEnum,
+  ContentPriorityEnum,
+} from '../../../../src/modules/content/domain/value-objects';
 
 describe('ContentModule (Integration) - Story 3.1', () => {
   let app: INestApplication;
@@ -60,7 +63,8 @@ describe('ContentModule (Integration) - Story 3.1', () => {
       it('should create a new content draft with all fields', async () => {
         const createDto = {
           title: `Test Content ${Date.now()}`,
-          content: 'This is test content body with enough text to be valid for testing purposes.',
+          content:
+            'This is test content body with enough text to be valid for testing purposes.',
           excerpt: 'Short excerpt for testing',
           type: ContentTypeEnum.ARTICLE,
           priority: ContentPriorityEnum.HIGH,
@@ -75,9 +79,12 @@ describe('ContentModule (Integration) - Story 3.1', () => {
           .expect(201);
 
         expect(response.body).toHaveProperty('id');
-        expect(response.body).toHaveProperty('message', 'Content draft created successfully');
+        expect(response.body).toHaveProperty(
+          'message',
+          'Content draft created successfully',
+        );
         expect(response.body.id).toMatch(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
         ); // UUID format
 
         createdContentId = response.body.id;
@@ -401,7 +408,10 @@ describe('ContentModule (Integration) - Story 3.1', () => {
           .send(updateDto)
           .expect(200);
 
-        expect(response.body).toHaveProperty('message', 'Content updated successfully');
+        expect(response.body).toHaveProperty(
+          'message',
+          'Content updated successfully',
+        );
       });
 
       it('should update content body', async () => {
@@ -473,7 +483,10 @@ describe('ContentModule (Integration) - Story 3.1', () => {
           .send(updateDto)
           .expect(200);
 
-        expect(response.body).toHaveProperty('message', 'Content updated successfully');
+        expect(response.body).toHaveProperty(
+          'message',
+          'Content updated successfully',
+        );
       });
 
       it('should return 404 for non-existent content', async () => {
@@ -506,6 +519,122 @@ describe('ContentModule (Integration) - Story 3.1', () => {
           .patch(`/api/v1/contents/${draftContentId}`)
           .send(updateDto)
           .expect(200);
+      });
+    });
+  });
+
+  describe('POST /api/v1/contents/:id/submit-for-approval', () => {
+    describe('Story 3.3: Submit Content for Approval', () => {
+      let draftContentId: string;
+
+      beforeEach(async () => {
+        // Create a draft content for submission tests
+        const createDto = {
+          title: `Draft for Submission ${Date.now()}`,
+          content: 'Draft content ready for approval submission',
+          type: ContentTypeEnum.ARTICLE,
+          priority: ContentPriorityEnum.HIGH,
+        };
+
+        const createResponse = await request(app.getHttpServer())
+          .post('/api/v1/contents')
+          .send(createDto)
+          .expect(201);
+
+        draftContentId = createResponse.body.id;
+      });
+
+      it('should submit DRAFT content for approval', async () => {
+        const response = await request(app.getHttpServer())
+          .post(`/api/v1/contents/${draftContentId}/submit-for-approval`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty(
+          'message',
+          'Content submitted for approval successfully',
+        );
+
+        // Verify status changed to PENDING
+        const getResponse = await request(app.getHttpServer())
+          .get(`/api/v1/contents/${draftContentId}`)
+          .expect(200);
+
+        expect(getResponse.body.status).toBe('PENDING');
+      });
+
+      it('should return 404 for non-existent content', async () => {
+        await request(app.getHttpServer())
+          .post('/api/v1/contents/non-existent-id/submit-for-approval')
+          .expect(404);
+      });
+
+      it('should return 400 if content is already PENDING', async () => {
+        // Submit once
+        await request(app.getHttpServer())
+          .post(`/api/v1/contents/${draftContentId}/submit-for-approval`)
+          .expect(200);
+
+        // Try to submit again (should fail)
+        await request(app.getHttpServer())
+          .post(`/api/v1/contents/${draftContentId}/submit-for-approval`)
+          .expect(400);
+      });
+
+      it('should allow submission after creating new DRAFT content', async () => {
+        // Create first content
+        const createDto1 = {
+          title: 'First Draft Content',
+          content: 'First draft content body',
+          type: ContentTypeEnum.NEWS,
+        };
+
+        const response1 = await request(app.getHttpServer())
+          .post('/api/v1/contents')
+          .send(createDto1)
+          .expect(201);
+
+        // Submit first content
+        await request(app.getHttpServer())
+          .post(`/api/v1/contents/${response1.body.id}/submit-for-approval`)
+          .expect(200);
+
+        // Create second content
+        const createDto2 = {
+          title: 'Second Draft Content',
+          content: 'Second draft content body',
+          type: ContentTypeEnum.ANNOUNCEMENT,
+        };
+
+        const response2 = await request(app.getHttpServer())
+          .post('/api/v1/contents')
+          .send(createDto2)
+          .expect(201);
+
+        // Submit second content (should succeed)
+        await request(app.getHttpServer())
+          .post(`/api/v1/contents/${response2.body.id}/submit-for-approval`)
+          .expect(200);
+      });
+
+      it('should transition status from DRAFT to PENDING', async () => {
+        // Verify initial status
+        const beforeResponse = await request(app.getHttpServer())
+          .get(`/api/v1/contents/${draftContentId}`)
+          .expect(200);
+
+        expect(beforeResponse.body.status).toBe('DRAFT');
+
+        // Submit for approval
+        await request(app.getHttpServer())
+          .post(`/api/v1/contents/${draftContentId}/submit-for-approval`)
+          .expect(200);
+
+        // Verify status changed
+        const afterResponse = await request(app.getHttpServer())
+          .get(`/api/v1/contents/${draftContentId}`)
+          .expect(200);
+
+        expect(afterResponse.body.status).toBe('PENDING');
       });
     });
   });

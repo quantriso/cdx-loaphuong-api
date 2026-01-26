@@ -1,9 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { IdempotencyService } from './idempotency.service';
-import type {
-  IIdempotentCommand,
-  IdempotencyOptions,
-} from '@core/application';
+import type { IIdempotentCommand, IdempotencyOptions } from '@core/application';
 
 /**
  * Idempotent Decorator

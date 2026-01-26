@@ -1,5 +1,5 @@
-import { IAggregateRepository } from "@core/domain";
-import { Content } from "../entities";
+import { IAggregateRepository } from '@core/domain';
+import { Content } from '../entities';
 
 /**
  * Content Repository Interface (Port) - WRITE SIDE ONLY

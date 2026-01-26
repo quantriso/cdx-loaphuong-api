@@ -1,10 +1,10 @@
-import { Injectable, Inject, Optional, Logger } from "@nestjs/common";
-import { eq, and } from "drizzle-orm";
+import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
+import { eq, and } from 'drizzle-orm';
 
 // Core imports
-import type { IEventBus, IOutboxRepository } from "@core/infrastructure";
-import { ConcurrencyException } from "@core/common";
-import { OUTBOX_REPOSITORY_TOKEN } from "@core/constants";
+import type { IEventBus, IOutboxRepository } from '@core/infrastructure';
+import { ConcurrencyException } from '@core/common';
+import { OUTBOX_REPOSITORY_TOKEN } from '@core/constants';
 
 // Shared imports
 import {
@@ -14,15 +14,19 @@ import {
   DATABASE_WRITE_TOKEN,
   type DrizzleDB,
   type DrizzleTransaction,
-} from "@shared";
+} from '@shared';
 
 // Domain imports
-import { Content } from "../../../domain/entities";
-import { IContentRepository } from "../../../domain/repositories";
-import { ContentStatus, ContentType, ContentPriority } from "../../../domain/value-objects";
+import { Content } from '../../../domain/entities';
+import { IContentRepository } from '../../../domain/repositories';
+import {
+  ContentStatus,
+  ContentType,
+  ContentPriority,
+} from '../../../domain/value-objects';
 
 // Infrastructure imports
-import { contentsTable, type ContentRecord } from "../drizzle/schema";
+import { contentsTable, type ContentRecord } from '../drizzle/schema';
 
 /**
  * Content Repository Implementation (Adapter) - WRITE SIDE ONLY
@@ -49,7 +53,7 @@ export class ContentRepository
     @Inject(EVENT_BUS_TOKEN) protected readonly eventBus: IEventBus,
     @Optional()
     @Inject(OUTBOX_REPOSITORY_TOKEN)
-    outboxRepository?: IOutboxRepository
+    outboxRepository?: IOutboxRepository,
   ) {
     super(eventBus, outboxRepository, {
       useOutbox: false, // Let Command Handler decide via save options
@@ -62,7 +66,7 @@ export class ContentRepository
   protected async persist(
     aggregate: Content,
     expectedVersion: number,
-    options?: SaveOptions
+    options?: SaveOptions,
   ): Promise<void> {
     const db = (options?.transaction as DrizzleTransaction) || this.db;
     const persistenceModel = this.toPersistence(aggregate);
@@ -79,8 +83,8 @@ export class ContentRepository
         .where(
           and(
             eq(contentsTable.id, aggregate.id),
-            eq(contentsTable.version, expectedVersion)
-          )
+            eq(contentsTable.version, expectedVersion),
+          ),
         )
         .returning({ id: contentsTable.id });
 
@@ -88,7 +92,7 @@ export class ContentRepository
         throw ConcurrencyException.versionMismatch(
           aggregate.id,
           expectedVersion,
-          aggregate.version
+          aggregate.version,
         );
       }
       this.logger.debug(`Content updated: ${aggregate.id}`);
@@ -127,7 +131,9 @@ export class ContentRepository
     const result = await this.db
       .select({ id: contentsTable.id })
       .from(contentsTable)
-      .where(and(eq(contentsTable.id, id), eq(contentsTable.tenantId, tenantId)))
+      .where(
+        and(eq(contentsTable.id, id), eq(contentsTable.tenantId, tenantId)),
+      )
       .limit(1);
 
     return result.length > 0;

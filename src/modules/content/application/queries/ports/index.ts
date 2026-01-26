@@ -1,1 +1,1 @@
-export * from "./content-read-dao.interface";
+export * from './content-read-dao.interface';

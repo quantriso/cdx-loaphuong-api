@@ -42,7 +42,7 @@ export interface IContentReadDao {
   findByAuthor(
     authorId: string,
     tenantId: string,
-    status?: string
+    status?: string,
   ): Promise<ContentResponseDto[]>;
 
   /**

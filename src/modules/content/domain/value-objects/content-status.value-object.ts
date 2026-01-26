@@ -1,15 +1,15 @@
-import { BaseValueObject, DomainException } from "@core/domain";
+import { BaseValueObject, DomainException } from '@core/domain';
 
 /**
  * Content Status Enum
  */
 export enum ContentStatusEnum {
-  DRAFT = "DRAFT",
-  PENDING = "PENDING",
-  APPROVED = "APPROVED",
-  REJECTED = "REJECTED",
-  PUBLISHED = "PUBLISHED",
-  ARCHIVED = "ARCHIVED",
+  DRAFT = 'DRAFT',
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  PUBLISHED = 'PUBLISHED',
+  ARCHIVED = 'ARCHIVED',
 }
 
 /**
@@ -57,7 +57,9 @@ export class ContentStatus extends BaseValueObject {
   }
 
   static fromValue(value: string): ContentStatus {
-    if (!Object.values(ContentStatusEnum).includes(value as ContentStatusEnum)) {
+    if (
+      !Object.values(ContentStatusEnum).includes(value as ContentStatusEnum)
+    ) {
       throw new DomainException(`Invalid content status: ${value}`);
     }
     return new ContentStatus(value as ContentStatusEnum);
@@ -97,7 +99,10 @@ export class ContentStatus extends BaseValueObject {
   canTransitionTo(newStatus: ContentStatus): boolean {
     const transitions: Record<ContentStatusEnum, ContentStatusEnum[]> = {
       [ContentStatusEnum.DRAFT]: [ContentStatusEnum.PENDING],
-      [ContentStatusEnum.PENDING]: [ContentStatusEnum.APPROVED, ContentStatusEnum.REJECTED],
+      [ContentStatusEnum.PENDING]: [
+        ContentStatusEnum.APPROVED,
+        ContentStatusEnum.REJECTED,
+      ],
       [ContentStatusEnum.APPROVED]: [ContentStatusEnum.PUBLISHED],
       [ContentStatusEnum.REJECTED]: [ContentStatusEnum.DRAFT],
       [ContentStatusEnum.PUBLISHED]: [ContentStatusEnum.ARCHIVED],
@@ -115,7 +120,7 @@ export class ContentStatus extends BaseValueObject {
 
     if (!this.canTransitionTo(newStatusVO)) {
       throw new DomainException(
-        `Invalid status transition from ${this.value} to ${newStatus}`
+        `Invalid status transition from ${this.value} to ${newStatus}`,
       );
     }
 

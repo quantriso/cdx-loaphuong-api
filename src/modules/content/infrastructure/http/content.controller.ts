@@ -9,38 +9,47 @@ import {
   Req,
   HttpCode,
   HttpStatus,
-} from "@nestjs/common";
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiParam,
   ApiBody,
-} from "@nestjs/swagger";
-import type { ICommandBus, IQueryBus } from "@core/application";
-import { COMMAND_BUS_TOKEN, QUERY_BUS_TOKEN } from "@core/constants";
-import { CreateContentDto, UpdateContentDto, ContentResponseDto } from "../../application/dtos";
-import { CreateContentCommand, UpdateContentCommand } from "../../application/commands";
-import { GetContentQuery } from "../../application/queries";
+} from '@nestjs/swagger';
+import type { ICommandBus, IQueryBus } from '@core/application';
+import { COMMAND_BUS_TOKEN, QUERY_BUS_TOKEN } from '@core/constants';
+import {
+  CreateContentDto,
+  UpdateContentDto,
+  ContentResponseDto,
+} from '../../application/dtos';
+import {
+  CreateContentCommand,
+  UpdateContentCommand,
+  SubmitContentForApprovalCommand,
+} from '../../application/commands';
+import { GetContentQuery } from '../../application/queries';
 
 /**
  * Content Controller
  *
  * Story 3.1: Create Content Draft
  * Story 3.2: Update Content
+ * Story 3.3: Submit Content for Approval
  *
  * HTTP endpoints for content management following CQRS pattern.
  * - Write operations (POST, PATCH) → Command Bus
  * - Read operations (GET) → Query Bus
  */
-@ApiTags("contents")
-@Controller("api/v1/contents")
+@ApiTags('contents')
+@Controller('api/v1/contents')
 export class ContentController {
   constructor(
     @Inject(COMMAND_BUS_TOKEN)
     private readonly commandBus: ICommandBus,
     @Inject(QUERY_BUS_TOKEN)
-    private readonly queryBus: IQueryBus
+    private readonly queryBus: IQueryBus,
   ) {}
 
   /**
@@ -52,28 +61,29 @@ export class ContentController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: "Create content draft",
-    description: "Creates a new content in DRAFT status and emits ContentCreatedEvent",
+    summary: 'Create content draft',
+    description:
+      'Creates a new content in DRAFT status and emits ContentCreatedEvent',
   })
   @ApiResponse({
     status: 201,
-    description: "Content draft created successfully",
+    description: 'Content draft created successfully',
     schema: {
       example: {
-        id: "550e8400-e29b-41d4-a716-446655440000",
-        message: "Content draft created successfully",
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        message: 'Content draft created successfully',
       },
     },
   })
-  @ApiResponse({ status: 400, description: "Validation error" })
+  @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiBody({ type: CreateContentDto })
   async createContent(
     @Body() dto: CreateContentDto,
-    @Req() req: any
+    @Req() req: any,
   ): Promise<{ id: string; message: string }> {
     // Extract tenant and user from request (will be set by auth middleware)
-    const tenantId = req.user?.tenantId || "mock-tenant-id";
-    const authorId = req.user?.id || "mock-author-id";
+    const tenantId = req.user?.tenantId || 'mock-tenant-id';
+    const authorId = req.user?.id || 'mock-user-id';
 
     const command = new CreateContentCommand(
       tenantId,
@@ -85,14 +95,15 @@ export class ContentController {
       dto.priority,
       dto.categoryId,
       dto.tags,
-      dto.featuredImage
+      dto.featuredImage,
     );
 
-    const contentId = await this.commandBus.execute<CreateContentCommand>(command);
+    const contentId =
+      await this.commandBus.execute<CreateContentCommand>(command);
 
     return {
       id: contentId,
-      message: "Content draft created successfully",
+      message: 'Content draft created successfully',
     };
   }
 
@@ -102,24 +113,22 @@ export class ContentController {
    * Story 3.1: Create Content Draft - Read Side
    * GET /api/v1/contents/:id
    */
-  @Get(":id")
+  @Get(':id')
   @ApiOperation({
-    summary: "Get content by ID",
-    description: "Retrieves a single content by its ID. Uses caching for performance.",
+    summary: 'Get content by ID',
+    description:
+      'Retrieves a single content by its ID. Uses caching for performance.',
   })
-  @ApiParam({ name: "id", description: "Content ID (UUID)" })
+  @ApiParam({ name: 'id', description: 'Content ID (UUID)' })
   @ApiResponse({
     status: 200,
-    description: "Content found",
+    description: 'Content found',
     type: ContentResponseDto,
   })
-  @ApiResponse({ status: 404, description: "Content not found" })
-  async getContent(
-    @Param("id") id: string,
-    @Req() req: any
-  ) {
+  @ApiResponse({ status: 404, description: 'Content not found' })
+  async getContent(@Param('id') id: string, @Req() req: any) {
     // Extract tenant from request (will be set by auth middleware)
-    const tenantId = req.user?.tenantId || "mock-tenant-id";
+    const tenantId = req.user?.tenantId || 'mock-tenant-id';
 
     const query = new GetContentQuery(id, tenantId);
 
@@ -137,32 +146,36 @@ export class ContentController {
    * - REJECTED content can be updated (resets to DRAFT)
    * - Published/archived content cannot be updated
    */
-  @Patch(":id")
+  @Patch(':id')
   @ApiOperation({
-    summary: "Update content",
-    description: "Updates content fields and emits ContentUpdatedEvent. Only DRAFT and REJECTED content can be updated.",
+    summary: 'Update content',
+    description:
+      'Updates content fields and emits ContentUpdatedEvent. Only DRAFT and REJECTED content can be updated.',
   })
-  @ApiParam({ name: "id", description: "Content ID (UUID)" })
+  @ApiParam({ name: 'id', description: 'Content ID (UUID)' })
   @ApiResponse({
     status: 200,
-    description: "Content updated successfully",
+    description: 'Content updated successfully',
     schema: {
       example: {
-        message: "Content updated successfully",
+        message: 'Content updated successfully',
       },
     },
   })
-  @ApiResponse({ status: 400, description: "Cannot update content in current status" })
-  @ApiResponse({ status: 404, description: "Content not found" })
+  @ApiResponse({
+    status: 400,
+    description: 'Cannot update content in current status',
+  })
+  @ApiResponse({ status: 404, description: 'Content not found' })
   @ApiBody({ type: UpdateContentDto })
   async updateContent(
-    @Param("id") id: string,
+    @Param('id') id: string,
     @Body() dto: UpdateContentDto,
-    @Req() req: any
+    @Req() req: any,
   ): Promise<{ message: string }> {
     // Extract tenant and user from request (will be set by auth middleware)
-    const tenantId = req.user?.tenantId || "mock-tenant-id";
-    const userId = req.user?.id || "mock-user-id";
+    const tenantId = req.user?.tenantId || 'mock-tenant-id';
+    const userId = req.user?.id || 'mock-user-id';
 
     // Create command with only provided fields (rest will be undefined)
     const command = new UpdateContentCommand(
@@ -174,13 +187,63 @@ export class ContentController {
       dto.excerpt,
       dto.categoryId,
       dto.featuredImage,
-      dto.tags
+      dto.tags,
     );
 
     await this.commandBus.execute(command);
 
     return {
-      message: "Content updated successfully",
+      message: 'Content updated successfully',
+    };
+  }
+
+  /**
+   * Submit content for approval
+   *
+   * Story 3.3: Submit Content for Approval
+   * POST /api/v1/contents/:id/submit-for-approval
+   *
+   * Business Rules:
+   * - Only DRAFT content can be submitted
+   * - Only content author can submit
+   * - Status transitions from DRAFT to PENDING
+   */
+  @Post(':id/submit-for-approval')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Submit content for approval',
+    description:
+      'Submits DRAFT content for approval and emits ContentSubmittedForApprovalEvent. Status transitions from DRAFT to PENDING.',
+  })
+  @ApiParam({ name: 'id', description: 'Content ID (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Content submitted for approval successfully',
+    schema: {
+      example: {
+        message: 'Content submitted for approval successfully',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Cannot submit content (not in DRAFT status or not author)',
+  })
+  @ApiResponse({ status: 404, description: 'Content not found' })
+  async submitForApproval(
+    @Param('id') id: string,
+    @Req() req: any,
+  ): Promise<{ message: string }> {
+    // Extract tenant and user from request (will be set by auth middleware)
+    const tenantId = req.user?.tenantId || 'mock-tenant-id';
+    const userId = req.user?.id || 'mock-user-id';
+
+    const command = new SubmitContentForApprovalCommand(id, tenantId, userId);
+
+    await this.commandBus.execute(command);
+
+    return {
+      message: 'Content submitted for approval successfully',
     };
   }
 }

@@ -8,9 +8,15 @@ import { CommandHandler } from '@shared/cqrs';
 import type { ITenantRepository } from '../../../domain/repositories';
 import { Tenant } from '../../../domain/entities';
 import { TenantId } from '../../../domain/value-objects';
-import { TENANT_REPOSITORY_TOKEN, TENANT_UNIQUENESS_CHECKER_TOKEN } from '../../../constants/tokens';
+import {
+  TENANT_REPOSITORY_TOKEN,
+  TENANT_UNIQUENESS_CHECKER_TOKEN,
+} from '../../../constants/tokens';
 import { hashPassword } from '@shared/security';
-import { TenantUniquenessService, type ITenantUniquenessChecker } from '../../../domain/services';
+import {
+  TenantUniquenessService,
+  type ITenantUniquenessChecker,
+} from '../../../domain/services';
 
 /**
  * Create Tenant Command Handler

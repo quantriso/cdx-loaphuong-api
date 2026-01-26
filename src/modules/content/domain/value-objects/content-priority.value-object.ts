@@ -1,13 +1,13 @@
-import { BaseValueObject, DomainException } from "@core/domain";
+import { BaseValueObject, DomainException } from '@core/domain';
 
 /**
  * Content Priority Enum
  */
 export enum ContentPriorityEnum {
-  LOW = "LOW",
-  MEDIUM = "MEDIUM",
-  HIGH = "HIGH",
-  URGENT = "URGENT",
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT',
 }
 
 /**
@@ -47,7 +47,9 @@ export class ContentPriority extends BaseValueObject {
   }
 
   static fromValue(value: string): ContentPriority {
-    if (!Object.values(ContentPriorityEnum).includes(value as ContentPriorityEnum)) {
+    if (
+      !Object.values(ContentPriorityEnum).includes(value as ContentPriorityEnum)
+    ) {
       throw new DomainException(`Invalid content priority: ${value}`);
     }
     return new ContentPriority(value as ContentPriorityEnum);

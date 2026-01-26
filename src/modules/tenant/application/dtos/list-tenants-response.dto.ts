@@ -1,4 +1,4 @@
-import { Tenant } from "../../domain/entities/tenant.entity";
+import { Tenant } from '../../domain/entities/tenant.entity';
 
 export interface TenantStatistics {
   userCount: number;

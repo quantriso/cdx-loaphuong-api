@@ -1,4 +1,4 @@
-import { ICommand } from "@core/application";
+import { ICommand } from '@core/application';
 
 /**
  * Update Content Command
@@ -20,6 +20,6 @@ export class UpdateContentCommand implements ICommand {
     public readonly excerpt?: string | null,
     public readonly categoryId?: string | null,
     public readonly featuredImage?: string | null,
-    public readonly tags?: string[]
+    public readonly tags?: string[],
   ) {}
 }

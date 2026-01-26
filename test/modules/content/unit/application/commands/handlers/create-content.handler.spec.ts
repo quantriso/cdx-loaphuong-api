@@ -1,7 +1,10 @@
 import { CreateContentHandler } from '../../../../../../../src/modules/content/application/commands/handlers';
 import { CreateContentCommand } from '../../../../../../../src/modules/content/application/commands';
 import { IContentRepository } from '../../../../../../../src/modules/content/domain/repositories';
-import { ContentTypeEnum, ContentPriorityEnum } from '../../../../../../../src/modules/content/domain/value-objects';
+import {
+  ContentTypeEnum,
+  ContentPriorityEnum,
+} from '../../../../../../../src/modules/content/domain/value-objects';
 
 describe('CreateContentHandler', () => {
   let handler: CreateContentHandler;
@@ -32,7 +35,7 @@ describe('CreateContentHandler', () => {
     ContentPriorityEnum.HIGH,
     'category-123',
     ['tag1', 'tag2'],
-    'https://example.com/image.jpg'
+    'https://example.com/image.jpg',
   );
 
   describe('execute', () => {
@@ -43,7 +46,7 @@ describe('CreateContentHandler', () => {
 
       expect(typeof result).toBe('string');
       expect(result).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
       ); // UUID format
     });
 
@@ -58,7 +61,9 @@ describe('CreateContentHandler', () => {
       expect(savedContent.tenantId).toBe('tenant-123');
       expect(savedContent.authorId).toBe('author-123');
       expect(savedContent.title).toBe('Test Content Title');
-      expect(savedContent.content).toBe('This is test content body with enough text.');
+      expect(savedContent.content).toBe(
+        'This is test content body with enough text.',
+      );
       expect(savedContent.excerpt).toBe('Short excerpt');
       expect(savedContent.type.toString()).toBe('ARTICLE');
       expect(savedContent.status.toString()).toBe('DRAFT');
@@ -79,7 +84,7 @@ describe('CreateContentHandler', () => {
         undefined, // No priority specified
         null,
         [],
-        null
+        null,
       );
 
       mockContentRepository.save.mockImplementation(async (content) => content);
@@ -101,7 +106,7 @@ describe('CreateContentHandler', () => {
         undefined,
         null,
         undefined,
-        null
+        null,
       );
 
       mockContentRepository.save.mockImplementation(async (content) => content);
@@ -132,7 +137,7 @@ describe('CreateContentHandler', () => {
       mockContentRepository.save.mockRejectedValue(repositoryError);
 
       await expect(handler.execute(validCommand)).rejects.toThrow(
-        'Database connection failed'
+        'Database connection failed',
       );
     });
   });

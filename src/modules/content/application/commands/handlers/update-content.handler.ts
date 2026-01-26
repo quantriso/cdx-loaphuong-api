@@ -1,9 +1,14 @@
-import { Injectable, Inject, NotFoundException, BadRequestException } from "@nestjs/common";
-import { CommandHandler } from "@nestjs/cqrs";
-import { ICommandHandler } from "@core/application";
-import { UpdateContentCommand } from "../update-content.command";
-import type { IContentRepository } from "../../../domain/repositories";
-import { CONTENT_REPOSITORY_TOKEN } from "../../../constants";
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { CommandHandler } from '@nestjs/cqrs';
+import { ICommandHandler } from '@core/application';
+import { UpdateContentCommand } from '../update-content.command';
+import type { IContentRepository } from '../../../domain/repositories';
+import { CONTENT_REPOSITORY_TOKEN } from '../../../constants';
 
 /**
  * Update Content Command Handler
@@ -25,12 +30,13 @@ import { CONTENT_REPOSITORY_TOKEN } from "../../../constants";
  */
 @CommandHandler(UpdateContentCommand)
 @Injectable()
-export class UpdateContentHandler
-  implements ICommandHandler<UpdateContentCommand, void>
-{
+export class UpdateContentHandler implements ICommandHandler<
+  UpdateContentCommand,
+  void
+> {
   constructor(
     @Inject(CONTENT_REPOSITORY_TOKEN)
-    private readonly contentRepository: IContentRepository
+    private readonly contentRepository: IContentRepository,
   ) {}
 
   async execute(command: UpdateContentCommand): Promise<void> {
@@ -39,14 +45,14 @@ export class UpdateContentHandler
 
     if (!content) {
       throw new NotFoundException(
-        `Content with id ${command.contentId} not found`
+        `Content with id ${command.contentId} not found`,
       );
     }
 
     // Verify tenant ownership (security: prevent cross-tenant access)
     if (content.tenantId !== command.tenantId) {
       throw new NotFoundException(
-        `Content with id ${command.contentId} not found`
+        `Content with id ${command.contentId} not found`,
       );
     }
 
@@ -61,16 +67,20 @@ export class UpdateContentHandler
       });
     } else if (!content.canEdit()) {
       throw new BadRequestException(
-        `Cannot edit content that is not in DRAFT status. Current status: ${content.status.toString()}`
+        `Cannot edit content that is not in DRAFT status. Current status: ${content.status.toString()}`,
       );
     }
 
     // 3. Update content fields
-    if (command.title !== undefined || command.content !== undefined || command.excerpt !== undefined) {
+    if (
+      command.title !== undefined ||
+      command.content !== undefined ||
+      command.excerpt !== undefined
+    ) {
       content.updateContent(
         command.title !== undefined ? command.title : content.title,
         command.content !== undefined ? command.content : content.content,
-        command.excerpt !== undefined ? command.excerpt : content.excerpt
+        command.excerpt !== undefined ? command.excerpt : content.excerpt,
       );
       contentFieldsUpdated = true;
     }

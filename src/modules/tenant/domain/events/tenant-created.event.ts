@@ -1,4 +1,4 @@
-import { BaseDomainEvent, IEventMetadata } from "@core/domain";
+import { BaseDomainEvent, IEventMetadata } from '@core/domain';
 
 /**
  * Tenant Created Event Data (Type-safe payload)
@@ -26,8 +26,8 @@ export class TenantCreatedEvent extends BaseDomainEvent<TenantCreatedEventData> 
   constructor(
     aggregateId: string,
     data: TenantCreatedEventData,
-    metadata?: IEventMetadata
+    metadata?: IEventMetadata,
   ) {
-    super(aggregateId, "Tenant", "TenantCreated", data, metadata);
+    super(aggregateId, 'Tenant', 'TenantCreated', data, metadata);
   }
 }

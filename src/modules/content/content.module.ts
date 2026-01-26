@@ -1,18 +1,18 @@
-import { Module } from "@nestjs/common";
-import { SharedCqrsModule } from "@shared";
+import { Module } from '@nestjs/common';
+import { SharedCqrsModule } from '@shared';
 
 // Application - Handlers
-import { CommandHandlers } from "./application/commands/handlers";
-import { QueryHandlers } from "./application/queries/handlers";
+import { CommandHandlers } from './application/commands/handlers';
+import { QueryHandlers } from './application/queries/handlers';
 
 // Infrastructure - Repository & DAO
-import { ContentRepository } from "./infrastructure/persistence/write";
-import { ContentReadDao } from "./infrastructure/persistence/read";
-import { ContentController } from "./infrastructure/http";
-import { EventHandlers } from "./infrastructure";
+import { ContentRepository } from './infrastructure/persistence/write';
+import { ContentReadDao } from './infrastructure/persistence/read';
+import { ContentController } from './infrastructure/http';
+import { EventHandlers } from './infrastructure';
 
 // Constants
-import { CONTENT_REPOSITORY_TOKEN, CONTENT_READ_DAO_TOKEN } from "./constants";
+import { CONTENT_REPOSITORY_TOKEN, CONTENT_READ_DAO_TOKEN } from './constants';
 
 /**
  * Content Module

@@ -4,19 +4,19 @@ import {
   IsBoolean,
   MinLength,
   MaxLength,
-} from "class-validator";
+} from 'class-validator';
 
 /**
  * DTO for soft delete tenant request
  */
 export class SoftDeleteTenantDto {
-  @IsString({ message: "Reason must be a string" })
-  @MinLength(10, { message: "Reason must be at least 10 characters" })
-  @MaxLength(500, { message: "Reason must not exceed 500 characters" })
+  @IsString({ message: 'Reason must be a string' })
+  @MinLength(10, { message: 'Reason must be at least 10 characters' })
+  @MaxLength(500, { message: 'Reason must not exceed 500 characters' })
   reason: string;
 
   @IsOptional()
-  @IsBoolean({ message: "forceDelete must be a boolean" })
+  @IsBoolean({ message: 'forceDelete must be a boolean' })
   forceDelete?: boolean;
 }
 

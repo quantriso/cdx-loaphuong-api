@@ -43,7 +43,7 @@ describe('UpdateContentHandler', () => {
         undefined,
         undefined,
         undefined,
-        undefined
+        undefined,
       );
 
       // Act
@@ -79,7 +79,7 @@ describe('UpdateContentHandler', () => {
         undefined,
         undefined,
         undefined,
-        undefined
+        undefined,
       );
 
       // Act
@@ -104,7 +104,7 @@ describe('UpdateContentHandler', () => {
         undefined,
         undefined,
         undefined,
-        undefined
+        undefined,
       );
 
       // Act & Assert
@@ -133,7 +133,7 @@ describe('UpdateContentHandler', () => {
         undefined,
         undefined,
         undefined,
-        undefined
+        undefined,
       );
 
       // Act & Assert
@@ -163,7 +163,7 @@ describe('UpdateContentHandler', () => {
         'Updated excerpt',
         null,
         'https://example.com/image.jpg',
-        ['tag1', 'tag2']
+        ['tag1', 'tag2'],
       );
 
       // Act

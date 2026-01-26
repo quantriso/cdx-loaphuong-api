@@ -1,6 +1,10 @@
-import { AggregateRoot, IEventMetadata, DomainException } from "@core/domain";
-import { ContentCreatedEvent, ContentUpdatedEvent } from "../events";
-import { ContentStatus, ContentType, ContentPriority } from "../value-objects";
+import { AggregateRoot, IEventMetadata, DomainException } from '@core/domain';
+import {
+  ContentCreatedEvent,
+  ContentUpdatedEvent,
+  ContentSubmittedForApprovalEvent,
+} from '../events';
+import { ContentStatus, ContentType, ContentPriority } from '../value-objects';
 
 /**
  * Content Properties Interface
@@ -38,7 +42,7 @@ export class Content extends AggregateRoot {
     props: ContentProps,
     version: number = 0,
     createdAt: Date = new Date(),
-    updatedAt: Date = new Date()
+    updatedAt: Date = new Date(),
   ) {
     super(id, version, createdAt, updatedAt);
     this._props = props;
@@ -51,19 +55,22 @@ export class Content extends AggregateRoot {
    *
    * Story 3.1: Create Content Draft
    */
-  static create(params: {
-    id: string;
-    tenantId: string;
-    authorId: string;
-    title: string;
-    content: string;
-    excerpt?: string | null;
-    type: ContentType;
-    priority?: ContentPriority;
-    categoryId?: string | null;
-    tags?: string[];
-    featuredImage?: string | null;
-  }, metadata?: IEventMetadata): Content {
+  static create(
+    params: {
+      id: string;
+      tenantId: string;
+      authorId: string;
+      title: string;
+      content: string;
+      excerpt?: string | null;
+      type: ContentType;
+      priority?: ContentPriority;
+      categoryId?: string | null;
+      tags?: string[];
+      featuredImage?: string | null;
+    },
+    metadata?: IEventMetadata,
+  ): Content {
     // Validation
     Content.validateTitle(params.title);
     Content.validateContent(params.content);
@@ -89,7 +96,7 @@ export class Content extends AggregateRoot {
       },
       0,
       now,
-      now
+      now,
     );
 
     // Emit Domain Event
@@ -104,8 +111,8 @@ export class Content extends AggregateRoot {
           type: content.type.toString(),
           status: content.status.toString(),
         },
-        metadata
-      )
+        metadata,
+      ),
     );
 
     return content;
@@ -149,7 +156,7 @@ export class Content extends AggregateRoot {
       },
       params.version,
       params.createdAt,
-      params.updatedAt
+      params.updatedAt,
     );
   }
 
@@ -230,7 +237,7 @@ export class Content extends AggregateRoot {
     title: string,
     content: string,
     excerpt: string | null,
-    metadata?: IEventMetadata
+    metadata?: IEventMetadata,
   ): void {
     // Validate
     Content.validateTitle(title);
@@ -287,8 +294,8 @@ export class Content extends AggregateRoot {
             categoryId: this._props.categoryId,
             tags: [...this._props.tags],
           },
-          metadata
-        )
+          metadata,
+        ),
       );
     }
   }
@@ -303,7 +310,7 @@ export class Content extends AggregateRoot {
   editRejectedContent(changedBy: string, metadata?: IEventMetadata): void {
     if (!this.isRejected()) {
       throw new DomainException(
-        "Can only edit content that is in REJECTED status"
+        'Can only edit content that is in REJECTED status',
       );
     }
 
@@ -339,8 +346,8 @@ export class Content extends AggregateRoot {
           categoryId: this._props.categoryId,
           tags: [...this._props.tags],
         },
-        metadata
-      )
+        metadata,
+      ),
     );
   }
 
@@ -352,7 +359,7 @@ export class Content extends AggregateRoot {
    */
   setCategory(categoryId: string | null): void {
     if (!this.canEdit()) {
-      throw new DomainException("Cannot change category of non-draft content");
+      throw new DomainException('Cannot change category of non-draft content');
     }
     this._props.categoryId = categoryId;
   }
@@ -366,7 +373,7 @@ export class Content extends AggregateRoot {
   setFeaturedImage(imageUrl: string | null): void {
     if (!this.canEdit()) {
       throw new DomainException(
-        "Cannot change featured image of non-draft content"
+        'Cannot change featured image of non-draft content',
       );
     }
     this._props.featuredImage = imageUrl;
@@ -380,7 +387,7 @@ export class Content extends AggregateRoot {
    */
   addTag(tag: string): void {
     if (!this.canEdit()) {
-      throw new DomainException("Cannot add tags to non-draft content");
+      throw new DomainException('Cannot add tags to non-draft content');
     }
     const normalizedTag = tag.trim().toLowerCase();
     if (!this._props.tags.includes(normalizedTag)) {
@@ -396,7 +403,7 @@ export class Content extends AggregateRoot {
    */
   removeTag(tag: string): void {
     if (!this.canEdit()) {
-      throw new DomainException("Cannot remove tags from non-draft content");
+      throw new DomainException('Cannot remove tags from non-draft content');
     }
     const normalizedTag = tag.trim().toLowerCase();
     const index = this._props.tags.indexOf(normalizedTag);
@@ -413,24 +420,84 @@ export class Content extends AggregateRoot {
     if (changedFields.length === 0) return;
 
     this.addDomainEvent(
-      new ContentUpdatedEvent(
+      new ContentUpdatedEvent(this.id, {
+        tenantId: this.tenantId,
+        contentId: this.id,
+        authorId: this.authorId,
+        changedBy,
+        changedAt: new Date(),
+        changedFields,
+        title: this._props.title,
+        content: this._props.content,
+        excerpt: this._props.excerpt,
+        type: this._props.type.toString(),
+        priority: this._props.priority.toString(),
+        categoryId: this._props.categoryId,
+        tags: [...this._props.tags],
+      }),
+    );
+  }
+
+  /**
+   * Check if content can be submitted for approval
+   * Story 3.3: Only DRAFT content can be submitted
+   */
+  canSubmit(): boolean {
+    return this._props.status.isDraft();
+  }
+
+  /**
+   * Submit content for approval
+   * Story 3.3: Transition DRAFT → PENDING
+   *
+   * Business Rules:
+   * - Only DRAFT content can be submitted
+   * - Status must transition validly (enforced by ContentStatus VO)
+   * - Emits ContentSubmittedForApprovalEvent
+   *
+   * @param metadata Event metadata
+   * @throws DomainException if content is not in DRAFT status
+   */
+  submitForApproval(metadata?: IEventMetadata): void {
+    if (!this.canSubmit()) {
+      throw new DomainException(
+        `Cannot submit content for approval. Current status: ${this._props.status.toString()}`,
+      );
+    }
+
+    const previousStatus = this._props.status.toString();
+    const newStatus = ContentStatus.pending();
+
+    // Validate transition (will throw if invalid)
+    if (!this._props.status.canTransitionTo(newStatus)) {
+      throw new DomainException(
+        `Invalid status transition from ${previousStatus} to ${newStatus.toString()}`,
+      );
+    }
+
+    // Update status
+    this._props.status = newStatus;
+
+    // Emit domain event
+    this.addDomainEvent(
+      new ContentSubmittedForApprovalEvent(
         this.id,
         {
           tenantId: this.tenantId,
           contentId: this.id,
           authorId: this.authorId,
-          changedBy,
-          changedAt: new Date(),
-          changedFields,
           title: this._props.title,
           content: this._props.content,
-          excerpt: this._props.excerpt,
+          previousStatus,
+          newStatus: newStatus.toString(),
           type: this._props.type.toString(),
           priority: this._props.priority.toString(),
           categoryId: this._props.categoryId,
           tags: [...this._props.tags],
-        }
-      )
+          submittedAt: new Date(),
+        },
+        metadata,
+      ),
     );
   }
 
@@ -438,25 +505,25 @@ export class Content extends AggregateRoot {
 
   private static validateTitle(title: string): void {
     if (!title || title.trim().length === 0) {
-      throw new DomainException("Content title is required");
+      throw new DomainException('Content title is required');
     }
     if (title.length > 200) {
-      throw new DomainException("Content title cannot exceed 200 characters");
+      throw new DomainException('Content title cannot exceed 200 characters');
     }
   }
 
   private static validateContent(content: string): void {
     if (!content || content.trim().length === 0) {
-      throw new DomainException("Content body is required");
+      throw new DomainException('Content body is required');
     }
     if (content.length > 10000) {
-      throw new DomainException("Content body cannot exceed 10000 characters");
+      throw new DomainException('Content body cannot exceed 10000 characters');
     }
   }
 
   private static validateExcerpt(excerpt: string): void {
     if (excerpt.length > 500) {
-      throw new DomainException("Content excerpt cannot exceed 500 characters");
+      throw new DomainException('Content excerpt cannot exceed 500 characters');
     }
   }
 }

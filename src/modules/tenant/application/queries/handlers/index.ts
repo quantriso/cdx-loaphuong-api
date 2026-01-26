@@ -9,7 +9,4 @@ import { ListTenantsHandler } from './list-tenants.handler';
  * Query Handlers Array
  * Export as array for easy registration in module providers
  */
-export const QueryHandlers = [
-  GetTenantHandler,
-  ListTenantsHandler,
-];
+export const QueryHandlers = [GetTenantHandler, ListTenantsHandler];

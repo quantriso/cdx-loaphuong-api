@@ -1,11 +1,11 @@
-import { randomUUID } from "crypto";
-import { Injectable, Inject } from "@nestjs/common";
-import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
-import { CreateContentCommand } from "../create-content.command";
-import { Content } from "../../../domain/entities";
-import { ContentType, ContentPriority } from "../../../domain/value-objects";
-import type { IContentRepository } from "../../../domain/repositories";
-import { CONTENT_REPOSITORY_TOKEN } from "../../../constants/tokens";
+import { randomUUID } from 'crypto';
+import { Injectable, Inject } from '@nestjs/common';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CreateContentCommand } from '../create-content.command';
+import { Content } from '../../../domain/entities';
+import { ContentType, ContentPriority } from '../../../domain/value-objects';
+import type { IContentRepository } from '../../../domain/repositories';
+import { CONTENT_REPOSITORY_TOKEN } from '../../../constants/tokens';
 
 /**
  * Create Content Command Handler
@@ -15,10 +15,13 @@ import { CONTENT_REPOSITORY_TOKEN } from "../../../constants/tokens";
  */
 @CommandHandler(CreateContentCommand)
 @Injectable()
-export class CreateContentHandler implements ICommandHandler<CreateContentCommand, string> {
+export class CreateContentHandler implements ICommandHandler<
+  CreateContentCommand,
+  string
+> {
   constructor(
     @Inject(CONTENT_REPOSITORY_TOKEN)
-    private readonly contentRepository: IContentRepository
+    private readonly contentRepository: IContentRepository,
   ) {}
 
   async execute(command: CreateContentCommand): Promise<string> {

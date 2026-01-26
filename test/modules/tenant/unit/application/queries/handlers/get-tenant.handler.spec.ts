@@ -1,6 +1,9 @@
 import { GetTenantHandler } from '../../../../../../../src/modules/tenant/application/queries/handlers/get-tenant.handler';
 import { GetTenantQuery } from '../../../../../../../src/modules/tenant/application/queries/get-tenant.query';
-import { ITenantReadDao, TenantReadDto } from '../../../../../../../src/modules/tenant/application/queries/ports/tenant-read-dao.interface';
+import {
+  ITenantReadDao,
+  TenantReadDto,
+} from '../../../../../../../src/modules/tenant/application/queries/ports/tenant-read-dao.interface';
 import { NotFoundException } from '@nestjs/common';
 
 describe('GetTenantHandler', () => {

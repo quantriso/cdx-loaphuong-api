@@ -29,10 +29,10 @@ export interface ResetAdminPasswordResult {
  * Note: Full implementation pending User module (Epic 2)
  */
 @CommandHandler(ResetAdminPasswordCommand)
-export class ResetAdminPasswordHandler
-  implements
-    ICommandHandler<ResetAdminPasswordCommand, ResetAdminPasswordResult>
-{
+export class ResetAdminPasswordHandler implements ICommandHandler<
+  ResetAdminPasswordCommand,
+  ResetAdminPasswordResult
+> {
   constructor(
     @Inject(TENANT_REPOSITORY_TOKEN)
     private readonly tenantRepository: ITenantRepository,

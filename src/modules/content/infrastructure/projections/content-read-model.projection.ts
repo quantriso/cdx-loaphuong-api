@@ -1,19 +1,19 @@
-import { Injectable, Inject, Logger } from "@nestjs/common";
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import {
   BaseProjection,
   IEventHandler,
   IProjectionLogger,
-} from "@core/application";
+} from '@core/application';
+import { DATABASE_WRITE_TOKEN, EventsHandler, type DrizzleDB } from '@shared';
+import { CONTENT_READ_DAO_TOKEN } from '../../constants/tokens';
 import {
-  DATABASE_WRITE_TOKEN,
-  EventsHandler,
-  type DrizzleDB,
-} from "@shared";
-import { CONTENT_READ_DAO_TOKEN } from "../../constants/tokens";
-import { ContentCreatedEvent, ContentUpdatedEvent } from "../../domain/events";
-import { contentsTable } from "../persistence/drizzle/schema";
-import { ContentReadDao } from "../persistence/read/content-read-dao";
-import { eq } from "drizzle-orm";
+  ContentCreatedEvent,
+  ContentUpdatedEvent,
+  ContentSubmittedForApprovalEvent,
+} from '../../domain/events';
+import { contentsTable } from '../persistence/drizzle/schema';
+import { ContentReadDao } from '../persistence/read/content-read-dao';
+import { eq } from 'drizzle-orm';
 
 /**
  * NestJS Logger adapter for BaseProjection
@@ -66,6 +66,7 @@ class NestProjectionLogger implements IProjectionLogger {
  *
  * Story 3.1: Create Content Draft - Read Side Synchronization
  * Story 3.2: Update Content - Read Side Synchronization
+ * Story 3.3: Submit Content for Approval - Read Side Synchronization
  *
  * @example
  * // When content is created:
@@ -75,10 +76,21 @@ class NestProjectionLogger implements IProjectionLogger {
  * // 4. Projection.handle() → Update cache/search/etc.
  */
 @Injectable()
-@EventsHandler(ContentCreatedEvent, ContentUpdatedEvent)
+@EventsHandler(
+  ContentCreatedEvent,
+  ContentUpdatedEvent,
+  ContentSubmittedForApprovalEvent,
+)
 export class ContentReadModelProjection
-  extends BaseProjection<ContentCreatedEvent | ContentUpdatedEvent>
-  implements IEventHandler<ContentCreatedEvent | ContentUpdatedEvent>
+  extends BaseProjection<
+    ContentCreatedEvent | ContentUpdatedEvent | ContentSubmittedForApprovalEvent
+  >
+  implements
+    IEventHandler<
+      | ContentCreatedEvent
+      | ContentUpdatedEvent
+      | ContentSubmittedForApprovalEvent
+    >
 {
   // In-memory event tracking for demo (production should use Redis/DB)
   private processedEvents: Set<string> = new Set();
@@ -87,23 +99,34 @@ export class ContentReadModelProjection
     @Inject(DATABASE_WRITE_TOKEN)
     private readonly db: DrizzleDB,
     @Inject(CONTENT_READ_DAO_TOKEN)
-    private readonly contentReadDao: ContentReadDao
+    private readonly contentReadDao: ContentReadDao,
   ) {
-    super(new NestProjectionLogger("ContentReadModelProjection"));
+    super(new NestProjectionLogger('ContentReadModelProjection'));
   }
 
   /**
    * Main handle method (required by BaseProjection abstract class)
    * This is the actual projection logic that processes events
    */
-  async handle(event: ContentCreatedEvent | ContentUpdatedEvent): Promise<void> {
+  async handle(
+    event:
+      | ContentCreatedEvent
+      | ContentUpdatedEvent
+      | ContentSubmittedForApprovalEvent,
+  ): Promise<void> {
     switch (event.eventType) {
-      case "ContentCreated":
+      case 'ContentCreated':
         await this.onContentCreated(event as ContentCreatedEvent);
         break;
 
-      case "ContentUpdated":
+      case 'ContentUpdated':
         await this.onContentUpdated(event as ContentUpdatedEvent);
+        break;
+
+      case 'ContentSubmittedForApproval':
+        await this.onContentSubmittedForApproval(
+          event as ContentSubmittedForApprovalEvent,
+        );
         break;
 
       default:
@@ -142,7 +165,7 @@ export class ContentReadModelProjection
    */
   private async onContentCreated(event: ContentCreatedEvent): Promise<void> {
     this.logger.log(
-      `Processing ContentCreatedEvent: ${event.aggregateId} - ${event.data.title}`
+      `Processing ContentCreatedEvent: ${event.aggregateId} - ${event.data.title}`,
     );
 
     // Demo: Log the event (production would update cache/search index)
@@ -155,7 +178,7 @@ export class ContentReadModelProjection
         type: event.data.type,
         status: event.data.status,
         correlationId: event.metadata?.correlationId,
-      })}`
+      })}`,
     );
 
     // Example: Index in Elasticsearch (pseudo-code)
@@ -181,7 +204,7 @@ export class ContentReadModelProjection
    */
   private async onContentUpdated(event: ContentUpdatedEvent): Promise<void> {
     this.logger.log(
-      `Processing ContentUpdatedEvent: ${event.aggregateId} - ${event.data.title}`
+      `Processing ContentUpdatedEvent: ${event.aggregateId} - ${event.data.title}`,
     );
 
     // Demo: Log the event (production would update cache/search index)
@@ -195,7 +218,7 @@ export class ContentReadModelProjection
         previousStatus: event.data.previousStatus,
         newStatus: event.data.newStatus,
         correlationId: event.metadata?.correlationId,
-      })}`
+      })}`,
     );
 
     // Example: Update cache (pseudo-code)
@@ -221,5 +244,59 @@ export class ContentReadModelProjection
     // if (event.data.changedFields.includes('status')) {
     //   await this.queryCache.invalidate(`tenant:${event.data.tenantId}:contents:by-status`);
     // }
+  }
+
+  /**
+   * Handle ContentSubmittedForApprovalEvent
+   *
+   * Story 3.3: Submit Content for Approval
+   *
+   * When content is submitted for approval:
+   * - Update cache to reflect PENDING status
+   * - Notify approvers/reviewers (future)
+   * - Update approval queue lists
+   * - Invalidate author's drafts list
+   */
+  private async onContentSubmittedForApproval(
+    event: ContentSubmittedForApprovalEvent,
+  ): Promise<void> {
+    this.logger.log(
+      `Processing ContentSubmittedForApprovalEvent: ${event.aggregateId} - ${event.data.title}`,
+    );
+
+    // Demo: Log the event (production would update cache/search index)
+    this.logger.debug(
+      `Content submitted for approval: ${JSON.stringify({
+        id: event.aggregateId,
+        tenantId: event.data.tenantId,
+        authorId: event.data.authorId,
+        title: event.data.title,
+        previousStatus: event.data.previousStatus,
+        newStatus: event.data.newStatus,
+        submittedAt: event.data.submittedAt,
+        correlationId: event.metadata?.correlationId,
+      })}`,
+    );
+
+    // Example: Update cache (pseudo-code)
+    // await this.cacheService.invalidate(`content:${event.aggregateId}`);
+    // await this.cacheService.invalidate(`tenant:${event.data.tenantId}:contents:drafts`);
+    // await this.cacheService.invalidate(`tenant:${event.data.tenantId}:contents:pending`);
+
+    // Example: Notify approvers (pseudo-code)
+    // await this.notificationService.notifyApprovers({
+    //   tenantId: event.data.tenantId,
+    //   contentId: event.aggregateId,
+    //   title: event.data.title,
+    //   authorId: event.data.authorId,
+    // });
+
+    // Example: Update approval queue (pseudo-code)
+    // await this.approvalQueueService.add({
+    //   contentId: event.aggregateId,
+    //   tenantId: event.data.tenantId,
+    //   submittedAt: event.data.submittedAt,
+    //   priority: event.data.priority,
+    // });
   }
 }

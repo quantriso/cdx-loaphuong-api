@@ -49,7 +49,10 @@ describe('GetContentHandler', () => {
       const result = await handler.execute(query);
 
       expect(result).toBe(expectedContent);
-      expect(mockContentReadDao.findById).toHaveBeenCalledWith('content-123', 'tenant-123');
+      expect(mockContentReadDao.findById).toHaveBeenCalledWith(
+        'content-123',
+        'tenant-123',
+      );
       expect(mockContentReadDao.findById).toHaveBeenCalledTimes(1);
     });
 
@@ -60,7 +63,7 @@ describe('GetContentHandler', () => {
 
       await expect(handler.execute(query)).rejects.toThrow(NotFoundException);
       await expect(handler.execute(query)).rejects.toThrow(
-        'Content with ID non-existent-id not found'
+        'Content with ID non-existent-id not found',
       );
     });
 
@@ -88,7 +91,10 @@ describe('GetContentHandler', () => {
 
       await handler.execute(query);
 
-      expect(mockContentReadDao.findById).toHaveBeenCalledWith('content-456', 'tenant-789');
+      expect(mockContentReadDao.findById).toHaveBeenCalledWith(
+        'content-456',
+        'tenant-789',
+      );
     });
 
     it('should propagate DAO errors', async () => {
@@ -97,7 +103,9 @@ describe('GetContentHandler', () => {
 
       mockContentReadDao.findById.mockRejectedValue(daoError);
 
-      await expect(handler.execute(query)).rejects.toThrow('Database connection failed');
+      await expect(handler.execute(query)).rejects.toThrow(
+        'Database connection failed',
+      );
     });
   });
 });

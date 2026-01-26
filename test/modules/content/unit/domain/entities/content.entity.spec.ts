@@ -1,9 +1,16 @@
 import { Content } from '../../../../../../src/modules/content/domain/entities';
-import { ContentType, ContentStatus, ContentPriority } from '../../../../../../src/modules/content/domain/value-objects';
+import {
+  ContentType,
+  ContentStatus,
+  ContentPriority,
+} from '../../../../../../src/modules/content/domain/value-objects';
 import { DomainException } from '@core/domain';
 
 describe('Content Entity', () => {
-  const createValidProps = (): Omit<Parameters<typeof Content.create>[0], 'id'> => ({
+  const createValidProps = (): Omit<
+    Parameters<typeof Content.create>[0],
+    'id'
+  > => ({
     tenantId: 'tenant-123',
     authorId: 'author-123',
     title: 'Test Content Title',
@@ -26,7 +33,9 @@ describe('Content Entity', () => {
       expect(content.tenantId).toBe('tenant-123');
       expect(content.authorId).toBe('author-123');
       expect(content.title).toBe('Test Content Title');
-      expect(content.content).toBe('This is test content body with enough text to be valid.');
+      expect(content.content).toBe(
+        'This is test content body with enough text to be valid.',
+      );
       expect(content.excerpt).toBe('Short excerpt');
       expect(content.type.toString()).toBe('ARTICLE');
       expect(content.status.toString()).toBe('DRAFT');
@@ -93,45 +102,55 @@ describe('Content Entity', () => {
     it('should throw DomainException for empty title', () => {
       const props = { ...createValidProps(), title: '' };
 
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(DomainException);
       expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
-        'Content title is required'
+        DomainException,
+      );
+      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
+        'Content title is required',
       );
     });
 
     it('should throw DomainException for title exceeding 200 characters', () => {
       const props = { ...createValidProps(), title: 'a'.repeat(201) };
 
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(DomainException);
       expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
-        'Content title cannot exceed 200 characters'
+        DomainException,
+      );
+      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
+        'Content title cannot exceed 200 characters',
       );
     });
 
     it('should throw DomainException for empty content body', () => {
       const props = { ...createValidProps(), content: '' };
 
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(DomainException);
       expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
-        'Content body is required'
+        DomainException,
+      );
+      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
+        'Content body is required',
       );
     });
 
     it('should throw DomainException for content body exceeding 10000 characters', () => {
       const props = { ...createValidProps(), content: 'a'.repeat(10001) };
 
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(DomainException);
       expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
-        'Content body cannot exceed 10000 characters'
+        DomainException,
+      );
+      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
+        'Content body cannot exceed 10000 characters',
       );
     });
 
     it('should throw DomainException for excerpt exceeding 500 characters', () => {
       const props = { ...createValidProps(), excerpt: 'a'.repeat(501) };
 
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(DomainException);
       expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
-        'Content excerpt cannot exceed 500 characters'
+        DomainException,
+      );
+      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
+        'Content excerpt cannot exceed 500 characters',
       );
     });
   });

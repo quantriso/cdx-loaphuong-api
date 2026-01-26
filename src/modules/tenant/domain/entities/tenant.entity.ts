@@ -1,7 +1,12 @@
-import { AggregateRoot, ISoftDeletable, DomainException, IEventMetadata } from "@core/domain";
-import { TenantCreatedEvent } from "../events/tenant-created.event";
-import { TenantDeletedEvent } from "../events/tenant-deleted.event";
-import { TenantStatus, TenantStatusEnum, TenantId } from "../value-objects";
+import {
+  AggregateRoot,
+  ISoftDeletable,
+  DomainException,
+  IEventMetadata,
+} from '@core/domain';
+import { TenantCreatedEvent } from '../events/tenant-created.event';
+import { TenantDeletedEvent } from '../events/tenant-deleted.event';
+import { TenantStatus, TenantStatusEnum, TenantId } from '../value-objects';
 
 export interface BrandingConfig {
   logo?: string;
@@ -43,7 +48,7 @@ export interface TenantProps {
  * - Soft delete pattern with restore capability
  */
 export class Tenant extends AggregateRoot implements ISoftDeletable {
-  private _tenantId: TenantId;  // ✅ ADD: Store TenantId Value Object
+  private _tenantId: TenantId; // ✅ ADD: Store TenantId Value Object
   private _props: TenantProps;
   private _deletedAt?: Date | null = null;
 
@@ -59,7 +64,7 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
     deletedAt?: Date | null,
   ) {
     super(id.value, version, createdAt, updatedAt);
-    this._tenantId = id;  // ✅ ADD: Store TenantId object
+    this._tenantId = id; // ✅ ADD: Store TenantId object
     this._props = props;
     this._deletedAt = deletedAt;
   }
@@ -84,16 +89,22 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
     }
 
     // ✅ Use Value Object state machine for status transition
-    this._props.status = this._props.status.transitionTo(TenantStatusEnum.DELETED);
+    this._props.status = this._props.status.transitionTo(
+      TenantStatusEnum.DELETED,
+    );
     this._deletedAt = new Date();
 
     // addDomainEvent() already calls markAsUpdated() which increments version
     // No need to call markAsModified() here to avoid double increment
     this.addDomainEvent(
-      new TenantDeletedEvent(this.id, {
-        id: this.id,
-        subdomain: this._props.subdomain,
-      }, metadata)
+      new TenantDeletedEvent(
+        this.id,
+        {
+          id: this.id,
+          subdomain: this._props.subdomain,
+        },
+        metadata,
+      ),
     );
   }
 
@@ -111,7 +122,9 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
     if (!this.isDeleted) return;
 
     // ✅ Use Value Object state machine for status transition
-    this._props.status = this._props.status.transitionTo(TenantStatusEnum.ACTIVE);
+    this._props.status = this._props.status.transitionTo(
+      TenantStatusEnum.ACTIVE,
+    );
     this._deletedAt = null;
     this.markAsModified();
   }
@@ -124,16 +137,19 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
    * @param params Tenant creation parameters
    * @param metadata Optional event metadata for distributed tracing
    */
-  static create(params: {
-    id: TenantId;
-    name: string;
-    subdomain: string;
-    adminEmail: string;
-    adminPasswordHash: string;
-    brandingConfig?: BrandingConfig | null;
-    limits?: TenantLimits | null;
-    createdBy?: string | null;
-  }, metadata?: IEventMetadata): Tenant {
+  static create(
+    params: {
+      id: TenantId;
+      name: string;
+      subdomain: string;
+      adminEmail: string;
+      adminPasswordHash: string;
+      brandingConfig?: BrandingConfig | null;
+      limits?: TenantLimits | null;
+      createdBy?: string | null;
+    },
+    metadata?: IEventMetadata,
+  ): Tenant {
     // Validation
     this.validateName(params.name);
     this.validateSubdomain(params.subdomain);
@@ -169,7 +185,7 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
           adminEmail: tenant.adminEmail,
         },
         metadata,
-      )
+      ),
     );
 
     return tenant;
@@ -273,11 +289,14 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
    * @param params Fields to update
    * @param metadata Optional event metadata for tracing
    */
-  updateConfig(params: {
-    name?: string;
-    brandingConfig?: BrandingConfig;
-    limits?: TenantLimits;
-  }, metadata?: IEventMetadata): void {
+  updateConfig(
+    params: {
+      name?: string;
+      brandingConfig?: BrandingConfig;
+      limits?: TenantLimits;
+    },
+    metadata?: IEventMetadata,
+  ): void {
     this.ensureNotDeleted();
 
     let hasChanges = false;
@@ -319,7 +338,7 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
     this.ensureNotDeleted();
 
     if (!newPasswordHash || newPasswordHash.trim().length === 0) {
-      throw new DomainException("Password hash is required");
+      throw new DomainException('Password hash is required');
     }
 
     this._props.adminPasswordHash = newPasswordHash;
@@ -339,7 +358,9 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
     }
 
     // ✅ Use Value Object state machine for status transition
-    this._props.status = this._props.status.transitionTo(TenantStatusEnum.SUSPENDED);
+    this._props.status = this._props.status.transitionTo(
+      TenantStatusEnum.SUSPENDED,
+    );
     this.markAsModified();
   }
 
@@ -356,7 +377,9 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
     }
 
     // ✅ Use Value Object state machine for status transition
-    this._props.status = this._props.status.transitionTo(TenantStatusEnum.ACTIVE);
+    this._props.status = this._props.status.transitionTo(
+      TenantStatusEnum.ACTIVE,
+    );
     this.markAsModified();
   }
 
@@ -364,39 +387,41 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
 
   private ensureNotDeleted(): void {
     if (this.isDeleted) {
-      throw new DomainException("Cannot modify deleted tenant");
+      throw new DomainException('Cannot modify deleted tenant');
     }
   }
 
   private static validateName(name: string): void {
     if (!name || name.trim().length === 0) {
-      throw new DomainException("Tenant name is required");
+      throw new DomainException('Tenant name is required');
     }
     if (name.length > 255) {
-      throw new DomainException("Tenant name cannot exceed 255 characters");
+      throw new DomainException('Tenant name cannot exceed 255 characters');
     }
   }
 
   private static validateSubdomain(subdomain: string): void {
     if (!subdomain || subdomain.trim().length === 0) {
-      throw new DomainException("Tenant subdomain is required");
+      throw new DomainException('Tenant subdomain is required');
     }
     if (subdomain.length > 100) {
-      throw new DomainException("Subdomain cannot exceed 100 characters");
+      throw new DomainException('Subdomain cannot exceed 100 characters');
     }
     // Validate subdomain format (lowercase, alphanumeric, hyphens)
     if (!/^[a-z0-9-]+$/.test(subdomain)) {
-      throw new DomainException("Tenant subdomain must be lowercase alphanumeric with hyphens");
+      throw new DomainException(
+        'Tenant subdomain must be lowercase alphanumeric with hyphens',
+      );
     }
   }
 
   private static validateEmail(email: string): void {
     if (!email || email.trim().length === 0) {
-      throw new DomainException("Admin email is required");
+      throw new DomainException('Admin email is required');
     }
     // Basic email validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      throw new DomainException("Invalid admin email format");
+      throw new DomainException('Invalid admin email format');
     }
   }
 }

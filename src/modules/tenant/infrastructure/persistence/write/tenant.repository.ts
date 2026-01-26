@@ -1,13 +1,10 @@
-import { Injectable, Inject, Optional, Logger } from "@nestjs/common";
-import { eq, and } from "drizzle-orm";
+import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
+import { eq, and } from 'drizzle-orm';
 
 // Import from Core (interfaces only)
-import type {
-  IEventBus,
-  IOutboxRepository,
-} from "@core/infrastructure";
-import { ConcurrencyException } from "@core/common";
-import { OUTBOX_REPOSITORY_TOKEN } from "@core/constants";
+import type { IEventBus, IOutboxRepository } from '@core/infrastructure';
+import { ConcurrencyException } from '@core/common';
+import { OUTBOX_REPOSITORY_TOKEN } from '@core/constants';
 
 // Import from Shared (implementations)
 import {
@@ -17,15 +14,15 @@ import {
   DATABASE_WRITE_TOKEN,
   type DrizzleDB,
   type DrizzleTransaction,
-} from "@shared";
+} from '@shared';
 
 // Import Domain & Ports
-import { Tenant } from "../../../domain/entities";
-import { ITenantRepository } from "../../../domain/repositories";
+import { Tenant } from '../../../domain/entities';
+import { ITenantRepository } from '../../../domain/repositories';
 
 // Import Infrastructure (Schema & Config)
-import { tenantsTable, type TenantRecord } from "../drizzle/schema";
-import { TenantStatus } from "../../../domain/value-objects";
+import { tenantsTable, type TenantRecord } from '../drizzle/schema';
+import { TenantStatus } from '../../../domain/value-objects';
 
 /**
  * Tenant Repository Implementation (Adapter) - WRITE SIDE ONLY

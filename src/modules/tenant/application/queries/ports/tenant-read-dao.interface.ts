@@ -46,8 +46,8 @@ export interface TenantReadDto {
 
 export interface ListTenantsFilter {
   status?: string;
-  sortBy?: "createdAt" | "updatedAt" | "name" | "status";
-  sortOrder?: "ASC" | "DESC";
+  sortBy?: 'createdAt' | 'updatedAt' | 'name' | 'status';
+  sortOrder?: 'ASC' | 'DESC';
 }
 
 export interface PaginationParams {
@@ -86,7 +86,7 @@ export interface ITenantReadDao {
    */
   findMany(
     filter: ListTenantsFilter,
-    pagination: PaginationParams
+    pagination: PaginationParams,
   ): Promise<ListTenantsResult>;
 
   /**

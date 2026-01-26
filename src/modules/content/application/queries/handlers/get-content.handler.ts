@@ -1,10 +1,10 @@
-import { Injectable, Inject } from "@nestjs/common";
-import { QueryHandler, IQueryHandler } from "@nestjs/cqrs";
-import { GetContentQuery } from "../get-content.query";
-import { ContentResponseDto } from "../../dtos";
-import type { IContentReadDao } from "../ports";
-import { CONTENT_READ_DAO_TOKEN } from "../../../constants/tokens";
-import { NotFoundException } from "@core/common";
+import { Injectable, Inject } from '@nestjs/common';
+import { QueryHandler, IQueryHandler } from '@nestjs/cqrs';
+import { GetContentQuery } from '../get-content.query';
+import { ContentResponseDto } from '../../dtos';
+import type { IContentReadDao } from '../ports';
+import { CONTENT_READ_DAO_TOKEN } from '../../../constants/tokens';
+import { NotFoundException } from '@core/common';
 
 /**
  * Get Content Query Handler
@@ -14,14 +14,20 @@ import { NotFoundException } from "@core/common";
  */
 @QueryHandler(GetContentQuery)
 @Injectable()
-export class GetContentHandler implements IQueryHandler<GetContentQuery, ContentResponseDto> {
+export class GetContentHandler implements IQueryHandler<
+  GetContentQuery,
+  ContentResponseDto
+> {
   constructor(
     @Inject(CONTENT_READ_DAO_TOKEN)
-    private readonly contentReadDao: IContentReadDao
+    private readonly contentReadDao: IContentReadDao,
   ) {}
 
   async execute(query: GetContentQuery): Promise<ContentResponseDto> {
-    const content = await this.contentReadDao.findById(query.id, query.tenantId);
+    const content = await this.contentReadDao.findById(
+      query.id,
+      query.tenantId,
+    );
 
     if (!content) {
       throw new NotFoundException(`Content with ID ${query.id} not found`);

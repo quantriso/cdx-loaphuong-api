@@ -1,25 +1,25 @@
-import { Injectable, Inject, Optional, Logger } from "@nestjs/common";
-import { eq, and, desc, sql } from "drizzle-orm";
-import { BaseReadDao } from "@core/infrastructure";
-import type { ICacheService } from "@core/infrastructure";
-import { CACHE_SERVICE_TOKEN } from "@core/constants";
-import type { DrizzleDB } from "@shared/database/drizzle";
-import { DATABASE_READ_TOKEN } from "@shared/database/drizzle";
-import { tenantsTable } from "../drizzle/schema/tenant.schema";
+import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
+import { eq, and, desc, sql } from 'drizzle-orm';
+import { BaseReadDao } from '@core/infrastructure';
+import type { ICacheService } from '@core/infrastructure';
+import { CACHE_SERVICE_TOKEN } from '@core/constants';
+import type { DrizzleDB } from '@shared/database/drizzle';
+import { DATABASE_READ_TOKEN } from '@shared/database/drizzle';
+import { tenantsTable } from '../drizzle/schema/tenant.schema';
 import type {
   ITenantReadDao,
   TenantReadDto,
   ListTenantsFilter,
   PaginationParams,
   ListTenantsResult,
-} from "../../../application/queries/ports/tenant-read-dao.interface";
-import type { schema } from "@shared/database/drizzle/schema";
+} from '../../../application/queries/ports/tenant-read-dao.interface';
+import type { schema } from '@shared/database/drizzle/schema';
 
 /**
  * Cache configuration
  */
 const CACHE_TTL_SECONDS = 300; // 5 minutes
-const CACHE_KEY_PREFIX = "tenant:";
+const CACHE_KEY_PREFIX = 'tenant:';
 
 /**
  * Tenant Read DAO Implementation
@@ -120,7 +120,7 @@ export class TenantReadDao extends BaseReadDao implements ITenantReadDao {
 
   async findMany(
     filter: ListTenantsFilter,
-    pagination: PaginationParams
+    pagination: PaginationParams,
   ): Promise<ListTenantsResult> {
     const conditions: any[] = [];
 
@@ -137,10 +137,10 @@ export class TenantReadDao extends BaseReadDao implements ITenantReadDao {
     }
 
     // Apply sorting
-    const sortBy = filter.sortBy || "createdAt";
-    const sortOrder = filter.sortOrder || "DESC";
+    const sortBy = filter.sortBy || 'createdAt';
+    const sortOrder = filter.sortOrder || 'DESC';
 
-    if (sortOrder === "DESC") {
+    if (sortOrder === 'DESC') {
       query = query.orderBy(desc(tenantsTable[sortBy])) as any;
     } else {
       query = query.orderBy(tenantsTable[sortBy]) as any;
@@ -158,9 +158,10 @@ export class TenantReadDao extends BaseReadDao implements ITenantReadDao {
       .select({ count: sql<number>`count(*)::int` })
       .from(tenantsTable);
 
-    const [{ count }] = conditions.length > 0
-      ? await countQuery.where(and(...conditions))
-      : await countQuery;
+    const [{ count }] =
+      conditions.length > 0
+        ? await countQuery.where(and(...conditions))
+        : await countQuery;
 
     const tenantDtos = data.map((tenant) => this.toDto(tenant));
 

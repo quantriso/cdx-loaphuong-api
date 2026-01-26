@@ -4,9 +4,9 @@ import {
   IsOptional,
   IsObject,
   ValidateNested,
-} from "class-validator";
-import { Type } from "class-transformer";
-import { z } from "zod";
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { z } from 'zod';
 
 class BrandingConfigDto {
   @IsOptional()
@@ -55,8 +55,10 @@ export class CreateTenantDto {
 
 // Zod schema for validation
 export const createTenantSchema = z.object({
-  name: z.string().min(1, "Tenant name is required"),
-  adminPassword: z.string().min(8, "Admin password must be at least 8 characters"),
+  name: z.string().min(1, 'Tenant name is required'),
+  adminPassword: z
+    .string()
+    .min(8, 'Admin password must be at least 8 characters'),
   brandingConfig: z
     .object({
       logo: z.string().optional(),

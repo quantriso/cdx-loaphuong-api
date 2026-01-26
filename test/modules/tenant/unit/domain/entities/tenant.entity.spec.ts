@@ -1,5 +1,12 @@
-import { Tenant, TenantProps } from '../../../../../../src/modules/tenant/domain/entities/tenant.entity';
-import { TenantId, TenantStatus, TenantStatusEnum } from '../../../../../../src/modules/tenant/domain/value-objects';
+import {
+  Tenant,
+  TenantProps,
+} from '../../../../../../src/modules/tenant/domain/entities/tenant.entity';
+import {
+  TenantId,
+  TenantStatus,
+  TenantStatusEnum,
+} from '../../../../../../src/modules/tenant/domain/value-objects';
 import { DomainException } from '@core/domain';
 
 describe('Tenant Entity', () => {

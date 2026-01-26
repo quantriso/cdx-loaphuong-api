@@ -1,1 +1,1 @@
-export * from "./content-read-dao";
+export * from './content-read-dao';

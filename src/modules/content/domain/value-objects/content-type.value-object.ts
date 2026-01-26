@@ -1,13 +1,13 @@
-import { BaseValueObject, DomainException } from "@core/domain";
+import { BaseValueObject, DomainException } from '@core/domain';
 
 /**
  * Content Type Enum
  */
 export enum ContentTypeEnum {
-  ARTICLE = "ARTICLE",
-  NEWS = "NEWS",
-  ANNOUNCEMENT = "ANNOUNCEMENT",
-  NOTICE = "NOTICE",
+  ARTICLE = 'ARTICLE',
+  NEWS = 'NEWS',
+  ANNOUNCEMENT = 'ANNOUNCEMENT',
+  NOTICE = 'NOTICE',
 }
 
 /**

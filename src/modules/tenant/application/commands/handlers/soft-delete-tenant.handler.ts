@@ -1,4 +1,9 @@
-import { Inject, NotFoundException, ForbiddenException, Optional } from '@nestjs/common';
+import {
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+  Optional,
+} from '@nestjs/common';
 import { SoftDeleteTenantCommand } from '../soft-delete-tenant.command';
 import { ICommandHandler } from '@core/application';
 import { REQUEST_CONTEXT_TOKEN } from '@core/constants';
@@ -20,9 +25,10 @@ import { TENANT_REPOSITORY_TOKEN } from '../../../constants/tokens';
  * - Passes metadata to domain methods for distributed tracing
  */
 @CommandHandler(SoftDeleteTenantCommand)
-export class SoftDeleteTenantHandler
-  implements ICommandHandler<SoftDeleteTenantCommand, void>
-{
+export class SoftDeleteTenantHandler implements ICommandHandler<
+  SoftDeleteTenantCommand,
+  void
+> {
   constructor(
     @Inject(TENANT_REPOSITORY_TOKEN)
     private readonly tenantRepository: ITenantRepository,

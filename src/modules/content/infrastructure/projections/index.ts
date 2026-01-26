@@ -1,1 +1,1 @@
-export * from "./content-read-model.projection";
+export * from './content-read-model.projection';

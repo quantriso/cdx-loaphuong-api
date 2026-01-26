@@ -19,9 +19,10 @@ import { TENANT_REPOSITORY_TOKEN } from '../../../constants/tokens';
  * - Passes metadata to domain methods for distributed tracing
  */
 @CommandHandler(UpdateTenantCommand)
-export class UpdateTenantHandler
-  implements ICommandHandler<UpdateTenantCommand, void>
-{
+export class UpdateTenantHandler implements ICommandHandler<
+  UpdateTenantCommand,
+  void
+> {
   constructor(
     @Inject(TENANT_REPOSITORY_TOKEN)
     private readonly tenantRepository: ITenantRepository,

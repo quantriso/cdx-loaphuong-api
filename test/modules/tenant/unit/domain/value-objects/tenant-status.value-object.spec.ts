@@ -1,4 +1,7 @@
-import { TenantStatus, TenantStatusEnum } from '../../../../../../src/modules/tenant/domain/value-objects/tenant-status.value-object';
+import {
+  TenantStatus,
+  TenantStatusEnum,
+} from '../../../../../../src/modules/tenant/domain/value-objects/tenant-status.value-object';
 import { DomainException } from '@core/domain';
 
 describe('TenantStatus Value Object', () => {
@@ -48,7 +51,9 @@ describe('TenantStatus Value Object', () => {
     });
 
     it('should throw error for invalid value', () => {
-      expect(() => TenantStatus.fromValue('INVALID' as any)).toThrow(DomainException);
+      expect(() => TenantStatus.fromValue('INVALID' as any)).toThrow(
+        DomainException,
+      );
     });
   });
 
@@ -107,7 +112,9 @@ describe('TenantStatus Value Object', () => {
     it('should not allow DELETED -> SUSPENDED transition', () => {
       const deleted = TenantStatus.deleted();
 
-      expect(() => deleted.transitionTo(TenantStatusEnum.SUSPENDED)).toThrow(DomainException);
+      expect(() => deleted.transitionTo(TenantStatusEnum.SUSPENDED)).toThrow(
+        DomainException,
+      );
     });
 
     it('should allow same-state transition (no-op)', () => {
@@ -121,7 +128,9 @@ describe('TenantStatus Value Object', () => {
   describe('string representation', () => {
     it('should convert to string correctly', () => {
       expect(TenantStatus.active().toString()).toBe(TenantStatusEnum.ACTIVE);
-      expect(TenantStatus.suspended().toString()).toBe(TenantStatusEnum.SUSPENDED);
+      expect(TenantStatus.suspended().toString()).toBe(
+        TenantStatusEnum.SUSPENDED,
+      );
       expect(TenantStatus.deleted().toString()).toBe(TenantStatusEnum.DELETED);
     });
   });

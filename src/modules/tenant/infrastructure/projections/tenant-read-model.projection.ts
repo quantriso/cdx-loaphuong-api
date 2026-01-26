@@ -4,11 +4,7 @@ import {
   IEventHandler,
   IProjectionLogger,
 } from '@core/application';
-import {
-  DATABASE_WRITE_TOKEN,
-  EventsHandler,
-  type DrizzleDB,
-} from '@shared';
+import { DATABASE_WRITE_TOKEN, EventsHandler, type DrizzleDB } from '@shared';
 import { TENANT_READ_DAO_TOKEN } from '../../constants/tokens';
 import { TenantCreatedEvent, TenantDeletedEvent } from '../../domain/events';
 import { tenantsTable } from '../persistence/drizzle/schema';

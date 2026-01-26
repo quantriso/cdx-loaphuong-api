@@ -2,7 +2,10 @@ import { UpdateTenantHandler } from '../../../../../../../src/modules/tenant/app
 import { UpdateTenantCommand } from '../../../../../../../src/modules/tenant/application/commands/update-tenant.command';
 import { ITenantRepository } from '../../../../../../../src/modules/tenant/domain/repositories';
 import { Tenant } from '../../../../../../../src/modules/tenant/domain/entities';
-import { TenantId, TenantStatus } from '../../../../../../../src/modules/tenant/domain/value-objects';
+import {
+  TenantId,
+  TenantStatus,
+} from '../../../../../../../src/modules/tenant/domain/value-objects';
 import { NotFoundException } from '@nestjs/common';
 import { DomainException } from '@core/domain';
 
@@ -27,10 +30,7 @@ describe('UpdateTenantHandler', () => {
       }),
     };
 
-    handler = new UpdateTenantHandler(
-      mockTenantRepository,
-      mockRequestContext,
-    );
+    handler = new UpdateTenantHandler(mockTenantRepository, mockRequestContext);
   });
 
   afterEach(() => {

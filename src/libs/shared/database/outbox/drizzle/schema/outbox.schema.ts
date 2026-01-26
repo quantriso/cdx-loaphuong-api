@@ -47,7 +47,10 @@ export const outboxTable = pgTable(
     payload: text('payload').notNull(),
 
     /** Processing status - VARCHAR instead of enum for Drizzle compatibility */
-    status: varchar('status', { length: 20 }).notNull().default('PENDING').$type<OutboxStatus>(),
+    status: varchar('status', { length: 20 })
+      .notNull()
+      .default('PENDING')
+      .$type<OutboxStatus>(),
 
     /** Creation timestamp */
     createdAt: timestamp('created_at', { withTimezone: true })

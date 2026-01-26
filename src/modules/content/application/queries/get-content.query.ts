@@ -1,5 +1,5 @@
-import { IQuery } from "@core/application";
-import { ContentResponseDto } from "../dtos";
+import { IQuery } from '@core/application';
+import { ContentResponseDto } from '../dtos';
 
 /**
  * Get Content Query
@@ -10,7 +10,7 @@ import { ContentResponseDto } from "../dtos";
 export class GetContentQuery extends IQuery<ContentResponseDto> {
   constructor(
     public readonly id: string,
-    public readonly tenantId: string
+    public readonly tenantId: string,
   ) {
     super();
   }

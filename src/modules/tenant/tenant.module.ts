@@ -73,9 +73,6 @@ import { QueryHandlers } from './application/queries/handlers';
     // Event Handlers
     ...EventHandlers,
   ],
-  exports: [
-    TENANT_REPOSITORY_TOKEN,
-    TENANT_READ_DAO_TOKEN,
-  ],
+  exports: [TENANT_REPOSITORY_TOKEN, TENANT_READ_DAO_TOKEN],
 })
 export class TenantModule {}

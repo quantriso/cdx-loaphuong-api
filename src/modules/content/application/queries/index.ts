@@ -1,2 +1,2 @@
-export * from "./get-content.query";
-export * from "./ports";
+export * from './get-content.query';
+export * from './ports';

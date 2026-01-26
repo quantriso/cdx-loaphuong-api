@@ -1,4 +1,11 @@
-import { pgTable, varchar, timestamp, jsonb, integer, index } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  varchar,
+  timestamp,
+  jsonb,
+  integer,
+  index,
+} from 'drizzle-orm/pg-core';
 
 /**
  * Tenants Table Schema
@@ -13,7 +20,9 @@ export const tenantsTable = pgTable(
     tenantId: varchar('tenant_id', { length: 100 }).notNull().unique(), // subdomain
     name: varchar('name', { length: 255 }).notNull(),
     adminEmail: varchar('admin_email', { length: 255 }).notNull(),
-    adminPasswordHash: varchar('admin_password_hash', { length: 255 }).notNull(),
+    adminPasswordHash: varchar('admin_password_hash', {
+      length: 255,
+    }).notNull(),
     status: varchar('status', { length: 20 }).notNull().default('ACTIVE'), // ACTIVE, SUSPENDED, DELETED
     brandingConfig: jsonb('branding_config'),
     limits: jsonb('limits'),

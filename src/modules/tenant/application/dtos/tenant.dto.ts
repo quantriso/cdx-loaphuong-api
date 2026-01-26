@@ -17,7 +17,7 @@ export class TenantDto {
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
     public readonly deletedAt?: Date | null,
-    public readonly deletedBy?: string | null
+    public readonly deletedBy?: string | null,
   ) {}
 }
 
@@ -30,6 +30,6 @@ export class TenantListDto {
     public readonly total: number,
     public readonly page: number,
     public readonly limit: number,
-    public readonly totalPages: number
+    public readonly totalPages: number,
   ) {}
 }

@@ -1,4 +1,4 @@
-import { ICommand } from "@core/application";
+import { ICommand } from '@core/application';
 
 /**
  * Create Content Command
@@ -17,6 +17,6 @@ export class CreateContentCommand implements ICommand {
     public readonly priority?: string,
     public readonly categoryId?: string | null,
     public readonly tags?: string[],
-    public readonly featuredImage?: string | null
+    public readonly featuredImage?: string | null,
   ) {}
 }
