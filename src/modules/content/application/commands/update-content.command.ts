@@ -15,6 +15,7 @@ export class UpdateContentCommand implements ICommand {
     public readonly contentId: string,
     public readonly tenantId: string,
     public readonly userId: string,
+    public readonly isAdmin: boolean,
     public readonly title?: string,
     public readonly content?: string,
     public readonly excerpt?: string | null,

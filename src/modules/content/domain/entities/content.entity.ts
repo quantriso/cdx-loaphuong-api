@@ -6,6 +6,7 @@ import {
   ContentApprovedEvent,
   ContentRejectedEvent,
   ContentPublishedEvent,
+  ContentArchivedEvent,
 } from '../events';
 import { ContentStatus, ContentType, ContentPriority } from '../value-objects';
 
@@ -673,6 +674,61 @@ export class Content extends AggregateRoot {
           authorId: this.authorId,
           publishedBy,
           publishedAt: new Date(),
+          previousStatus,
+          newStatus: newStatus.toString(),
+          title: this._props.title,
+          type: this._props.type.toString(),
+          priority: this._props.priority.toString(),
+          categoryId: this._props.categoryId,
+          tags: [...this._props.tags],
+        },
+        metadata,
+      ),
+    );
+  }
+
+  /**
+   * Archive published content
+   * Story 3.7: Transition PUBLISHED → ARCHIVED
+   *
+   * Business Rules:
+   * - Only PUBLISHED content can be archived
+   * - Admin only operation
+   * - Status must transition validly (enforced by ContentStatus VO)
+   * - Emits ContentArchivedEvent
+   *
+   * @param archivedBy Admin user ID who archived the content
+   * @param metadata Event metadata (correlationId, causationId, userId)
+   */
+  archive(archivedBy: string, metadata?: IEventMetadata): void {
+    if (!this._props.status.isPublished()) {
+      throw new DomainException(
+        `Cannot archive content. Current status: ${this._props.status.toString()}. Only PUBLISHED content can be archived.`,
+      );
+    }
+
+    const previousStatus = this._props.status.toString();
+    const newStatus = ContentStatus.archived();
+
+    // Validate transition (will throw if invalid)
+    if (!this._props.status.canTransitionTo(newStatus)) {
+      throw new DomainException(
+        `Invalid status transition from ${previousStatus} to ${newStatus.toString()}`,
+      );
+    }
+
+    // Update status
+    this._props.status = newStatus;
+
+    // Emit domain event
+    this.addDomainEvent(
+      new ContentArchivedEvent(
+        this.id,
+        {
+          tenantId: this.tenantId,
+          authorId: this.authorId,
+          archivedBy,
+          archivedAt: new Date(),
           previousStatus,
           newStatus: newStatus.toString(),
           title: this._props.title,

@@ -1,9 +1,16 @@
 import { Module } from '@nestjs/common';
-import { SharedCqrsModule } from '@shared';
+import { SharedCqrsModule, SharedModule } from '@shared';
 
 // Application - Handlers
 import { CommandHandlers } from './application/commands/handlers';
 import { QueryHandlers } from './application/queries/handlers';
+
+// Application - Services
+import { ContentCacheService } from './application/services/content-cache.service';
+
+// Domain - Services
+import { ContentValidatorService } from './domain/services/content-validator.service';
+import { ContentHistoryService } from './domain/services/content-history.service';
 
 // Infrastructure - Repository & DAO
 import { ContentRepository } from './infrastructure/persistence/write';
@@ -11,8 +18,17 @@ import { ContentReadDao } from './infrastructure/persistence/read';
 import { ContentController } from './infrastructure/http';
 import { EventHandlers } from './infrastructure';
 
+// Infrastructure - Adapters for Domain Services
+import { ContentRulesCheckerAdapter } from './infrastructure/persistence/content-rules-checker';
+import { ContentHistoryTrackerAdapter } from './infrastructure/persistence/content-history-tracker';
+
 // Constants
-import { CONTENT_REPOSITORY_TOKEN, CONTENT_READ_DAO_TOKEN } from './constants';
+import {
+  CONTENT_REPOSITORY_TOKEN,
+  CONTENT_READ_DAO_TOKEN,
+  CONTENT_RULES_CHECKER_TOKEN,
+  CONTENT_HISTORY_TRACKER_TOKEN,
+} from './constants';
 
 /**
  * Content Module
@@ -26,7 +42,7 @@ import { CONTENT_REPOSITORY_TOKEN, CONTENT_READ_DAO_TOKEN } from './constants';
  * - Infrastructure: Repository Implementation, Read DAO, HTTP Controllers
  */
 @Module({
-  imports: [SharedCqrsModule],
+  imports: [SharedCqrsModule, SharedModule],
   controllers: [ContentController],
   providers: [
     // =================================================================
@@ -56,6 +72,32 @@ import { CONTENT_REPOSITORY_TOKEN, CONTENT_READ_DAO_TOKEN } from './constants';
 
     // Query Handlers
     ...QueryHandlers,
+
+    // =================================================================
+    // Application Services
+    // =================================================================
+
+    ContentCacheService,
+
+    // =================================================================
+    // Domain Services & Adapters
+    // =================================================================
+
+    // Content Rules Checker (Port + Adapter)
+    ContentRulesCheckerAdapter,
+    {
+      provide: CONTENT_RULES_CHECKER_TOKEN,
+      useExisting: ContentRulesCheckerAdapter,
+    },
+    ContentValidatorService,
+
+    // Content History Tracker (Port + Adapter)
+    ContentHistoryTrackerAdapter,
+    {
+      provide: CONTENT_HISTORY_TRACKER_TOKEN,
+      useExisting: ContentHistoryTrackerAdapter,
+    },
+    ContentHistoryService,
 
     // =================================================================
     // Event Handlers (Projections)

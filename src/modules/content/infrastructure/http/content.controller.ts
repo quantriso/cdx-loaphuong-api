@@ -180,15 +180,17 @@ export class ContentController {
     @Body() dto: UpdateContentDto,
     @Req() req: any,
   ): Promise<{ message: string }> {
-    // Extract tenant and user from request (will be set by auth middleware)
+    // Extract tenant, user and admin status from request (will be set by auth middleware)
     const tenantId = req.user?.tenantId || 'mock-tenant-id';
     const userId = req.user?.id || 'mock-user-id';
+    const isAdmin = req.user?.isAdmin || false;
 
     // Create command with only provided fields (rest will be undefined)
     const command = new UpdateContentCommand(
       id,
       tenantId,
       userId,
+      isAdmin,
       dto.title,
       dto.content,
       dto.excerpt,
@@ -356,12 +358,7 @@ export class ContentController {
     const tenantId = req.user?.tenantId || 'mock-tenant-id';
     const adminId = req.user?.id || 'mock-admin-id';
 
-    const command = new RejectContentCommand(
-      id,
-      tenantId,
-      adminId,
-      dto.reason,
-    );
+    const command = new RejectContentCommand(id, tenantId, adminId, dto.reason);
 
     await this.commandBus.execute(command);
 

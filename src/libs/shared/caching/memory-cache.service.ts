@@ -18,15 +18,14 @@ export class MemoryCacheService implements ICacheService, OnModuleDestroy {
   private readonly keyPrefix: string;
   private readonly maxEntries: number;
 
-  constructor(options: CacheOptions = {}) {
-    this.defaultTtl = options.defaultTtl || 300;
-    this.keyPrefix = options.keyPrefix || '';
-    this.maxEntries = options.maxEntries || 1000;
+  constructor() {
+    // Use default options - no external dependencies needed
+    this.defaultTtl = 300; // 5 minutes
+    this.keyPrefix = '';
+    this.maxEntries = 1000;
 
-    if (options.cleanupInterval !== 0) {
-      const intervalMs = options.cleanupInterval || 60000;
-      this.cleanupInterval = setInterval(() => this.cleanup(), intervalMs);
-    }
+    const intervalMs = 60000; // 1 minute
+    this.cleanupInterval = setInterval(() => this.cleanup(), intervalMs);
   }
 
   async get<T>(key: string): Promise<T | null> {

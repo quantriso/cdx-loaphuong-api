@@ -2,6 +2,7 @@ import { Module, Global } from '@nestjs/common';
 import { SharedCqrsModule } from './cqrs';
 import { LoggingModule } from './logging';
 import { HealthModule } from './health';
+import { CachingModule } from './caching';
 
 /**
  * Shared Module
@@ -11,6 +12,7 @@ import { HealthModule } from './health';
  * - CQRS (Command/Query/Event buses)
  * - Logging (Pino structured logging)
  * - Health checks
+ * - Caching (In-memory or Redis)
  *
  * Note: Database module is not included here because it requires
  * application-specific schema configuration. Use DrizzleDatabaseModule.forRoot()
@@ -20,7 +22,19 @@ import { OutboxModule } from './database/outbox/outbox.module';
 
 @Global()
 @Module({
-  imports: [SharedCqrsModule, LoggingModule, HealthModule, OutboxModule],
-  exports: [SharedCqrsModule, LoggingModule, HealthModule, OutboxModule],
+  imports: [
+    SharedCqrsModule,
+    LoggingModule,
+    HealthModule,
+    OutboxModule,
+    CachingModule,
+  ],
+  exports: [
+    SharedCqrsModule,
+    LoggingModule,
+    HealthModule,
+    OutboxModule,
+    CachingModule,
+  ],
 })
 export class SharedModule {}

@@ -50,6 +50,16 @@ describe('ContentModule (Integration) - Story 3.1', () => {
     );
     app.useGlobalFilters(new GlobalExceptionFilter());
 
+    // Add middleware to mock user context
+    app.use((req: any, res: any, next: any) => {
+      req.user = {
+        id: 'mock-user-id',
+        tenantId: 'mock-tenant-id',
+        isAdmin: false,
+      };
+      next();
+    });
+
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   }, 60000); // 60s timeout for app initialization

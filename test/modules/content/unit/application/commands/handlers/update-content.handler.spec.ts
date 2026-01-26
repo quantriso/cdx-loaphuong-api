@@ -3,10 +3,16 @@ import { UpdateContentCommand } from '../../../../../../../src/modules/content/a
 import { IContentRepository } from '../../../../../../../src/modules/content/domain/repositories';
 import { Content } from '../../../../../../../src/modules/content/domain/entities';
 import { ContentType } from '../../../../../../../src/modules/content/domain/value-objects';
+import { ContentCacheService } from '../../../../../../../src/modules/content/application/services/content-cache.service';
+import { ContentValidatorService } from '../../../../../../../src/modules/content/domain/services/content-validator.service';
+import { ContentHistoryService } from '../../../../../../../src/modules/content/domain/services/content-history.service';
 
 describe('UpdateContentHandler', () => {
   let handler: UpdateContentHandler;
   let mockRepository: jest.Mocked<IContentRepository>;
+  let mockCacheService: jest.Mocked<ContentCacheService>;
+  let mockValidatorService: jest.Mocked<ContentValidatorService>;
+  let mockHistoryService: jest.Mocked<ContentHistoryService>;
 
   beforeEach(() => {
     mockRepository = {
@@ -16,7 +22,33 @@ describe('UpdateContentHandler', () => {
       existsById: jest.fn(),
     } as any;
 
-    handler = new UpdateContentHandler(mockRepository);
+    mockCacheService = {
+      getContentDetails: jest.fn(),
+      setContentDetails: jest.fn(),
+      invalidateContentDetails: jest.fn(),
+      getContentList: jest.fn(),
+      setContentList: jest.fn(),
+      invalidateContentList: jest.fn(),
+      invalidateAllCaches: jest.fn(),
+      clearTenantCache: jest.fn(),
+      warmCache: jest.fn(),
+    } as any;
+
+    mockValidatorService = {
+      validateCanEdit: jest.fn(),
+    } as any;
+
+    mockHistoryService = {
+      recordChange: jest.fn(),
+      getHistory: jest.fn(),
+    } as any;
+
+    handler = new UpdateContentHandler(
+      mockRepository,
+      mockCacheService,
+      mockValidatorService,
+      mockHistoryService,
+    );
   });
 
   describe('execute', () => {
@@ -31,13 +63,14 @@ describe('UpdateContentHandler', () => {
         type: ContentType.article(),
       });
 
-      mockRepository.getById.mockResolvedValue(content);
+      mockValidatorService.validateCanEdit.mockResolvedValue(content);
       mockRepository.save.mockResolvedValue(content);
 
       const command = new UpdateContentCommand(
         'content-1',
         'tenant-1',
         'author-1',
+        false,
         'Updated Title',
         undefined,
         undefined,
@@ -50,10 +83,22 @@ describe('UpdateContentHandler', () => {
       await handler.execute(command);
 
       // Assert
-      expect(mockRepository.getById).toHaveBeenCalledWith('content-1');
+      expect(mockValidatorService.validateCanEdit).toHaveBeenCalledWith(
+        'content-1',
+        'tenant-1',
+        'author-1',
+        false,
+      );
       expect(mockRepository.save).toHaveBeenCalled();
       const savedContent = mockRepository.save.mock.calls[0][0];
       expect(savedContent.title).toBe('Updated Title');
+      expect(mockHistoryService.recordChange).toHaveBeenCalledWith(
+        'content-1',
+        'title',
+        'Original Title',
+        'Updated Title',
+        'author-1',
+      );
     });
 
     it('should update content body', async () => {
@@ -67,13 +112,14 @@ describe('UpdateContentHandler', () => {
         type: ContentType.article(),
       });
 
-      mockRepository.getById.mockResolvedValue(content);
+      mockValidatorService.validateCanEdit.mockResolvedValue(content);
       mockRepository.save.mockResolvedValue(content);
 
       const command = new UpdateContentCommand(
         'content-1',
         'tenant-1',
         'author-1',
+        false,
         undefined,
         'Updated content body',
         undefined,
@@ -89,16 +135,26 @@ describe('UpdateContentHandler', () => {
       expect(mockRepository.save).toHaveBeenCalled();
       const savedContent = mockRepository.save.mock.calls[0][0];
       expect(savedContent.content).toBe('Updated content body');
+      expect(mockHistoryService.recordChange).toHaveBeenCalledWith(
+        'content-1',
+        'content',
+        'Original content body',
+        'Updated content body',
+        'author-1',
+      );
     });
 
     it('should throw NotFoundException if content does not exist', async () => {
       // Arrange
-      mockRepository.getById.mockResolvedValue(null);
+      mockValidatorService.validateCanEdit.mockRejectedValue(
+        new Error('Content not found'),
+      );
 
       const command = new UpdateContentCommand(
         'non-existent-id',
         'tenant-1',
         'author-1',
+        false,
         'Updated Title',
         undefined,
         undefined,
@@ -122,12 +178,15 @@ describe('UpdateContentHandler', () => {
         type: ContentType.article(),
       });
 
-      mockRepository.getById.mockResolvedValue(content);
+      mockValidatorService.validateCanEdit.mockRejectedValue(
+        new Error('Tenant does not match'),
+      );
 
       const command = new UpdateContentCommand(
         'content-1',
         'wrong-tenant',
         'author-1',
+        false,
         'Updated Title',
         undefined,
         undefined,
@@ -151,13 +210,14 @@ describe('UpdateContentHandler', () => {
         type: ContentType.article(),
       });
 
-      mockRepository.getById.mockResolvedValue(content);
+      mockValidatorService.validateCanEdit.mockResolvedValue(content);
       mockRepository.save.mockResolvedValue(content);
 
       const command = new UpdateContentCommand(
         'content-1',
         'tenant-1',
         'author-1',
+        false,
         'Updated Title',
         'Updated content body',
         'Updated excerpt',
@@ -176,6 +236,7 @@ describe('UpdateContentHandler', () => {
       expect(savedContent.excerpt).toBe('Updated excerpt');
       expect(savedContent.featuredImage).toBe('https://example.com/image.jpg');
       expect(savedContent.tags).toEqual(['tag1', 'tag2']);
+      expect(mockCacheService.invalidateAllCaches).toHaveBeenCalled();
     });
   });
 });
