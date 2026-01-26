@@ -12,6 +12,7 @@ import {
   ContentSubmittedForApprovalEvent,
   ContentApprovedEvent,
   ContentRejectedEvent,
+  ContentPublishedEvent,
 } from '../../domain/events';
 import { contentsTable } from '../persistence/drizzle/schema';
 import { ContentReadDao } from '../persistence/read/content-read-dao';
@@ -84,6 +85,7 @@ class NestProjectionLogger implements IProjectionLogger {
   ContentSubmittedForApprovalEvent,
   ContentApprovedEvent,
   ContentRejectedEvent,
+  ContentPublishedEvent,
 )
 export class ContentReadModelProjection
   extends BaseProjection<
@@ -92,6 +94,7 @@ export class ContentReadModelProjection
     | ContentSubmittedForApprovalEvent
     | ContentApprovedEvent
     | ContentRejectedEvent
+    | ContentPublishedEvent
   >
   implements
     IEventHandler<
@@ -100,6 +103,7 @@ export class ContentReadModelProjection
       | ContentSubmittedForApprovalEvent
       | ContentApprovedEvent
       | ContentRejectedEvent
+      | ContentPublishedEvent
     >
 {
   // In-memory event tracking for demo (production should use Redis/DB)
@@ -124,7 +128,8 @@ export class ContentReadModelProjection
       | ContentUpdatedEvent
       | ContentSubmittedForApprovalEvent
       | ContentApprovedEvent
-      | ContentRejectedEvent,
+      | ContentRejectedEvent
+      | ContentPublishedEvent,
   ): Promise<void> {
     switch (event.eventType) {
       case 'ContentCreated':
@@ -147,6 +152,10 @@ export class ContentReadModelProjection
 
       case 'ContentRejected':
         await this.onContentRejected(event as ContentRejectedEvent);
+        break;
+
+      case 'ContentPublished':
+        await this.onContentPublished(event as ContentPublishedEvent);
         break;
 
       default:
@@ -415,5 +424,61 @@ export class ContentReadModelProjection
 
     // Example: Update rejection stats (pseudo-code)
     // await this.statsService.incrementRejections(event.data.tenantId);
+  }
+
+  /**
+   * Handle ContentPublishedEvent
+   *
+   * Story 3.6: Publish Content
+   *
+   * When content is published by Admin:
+   * - Update cache to reflect PUBLISHED status
+   * - Notify author of publication
+   * - Update published content lists
+   * - Trigger SEO indexing
+   */
+  private async onContentPublished(
+    event: ContentPublishedEvent,
+  ): Promise<void> {
+    this.logger.log(
+      `Processing ContentPublishedEvent: ${event.aggregateId} - ${event.data.title}`,
+    );
+
+    // Demo: Log the event (production would update cache/search index)
+    this.logger.debug(
+      `Content published: ${JSON.stringify({
+        id: event.aggregateId,
+        tenantId: event.data.tenantId,
+        authorId: event.data.authorId,
+        publishedBy: event.data.publishedBy,
+        title: event.data.title,
+        previousStatus: event.data.previousStatus,
+        newStatus: event.data.newStatus,
+        publishedAt: event.data.publishedAt,
+        correlationId: event.metadata?.correlationId,
+      })}`,
+    );
+
+    // Example: Update cache (pseudo-code)
+    // await this.cacheService.invalidate(`content:${event.aggregateId}`);
+    // await this.cacheService.invalidate(`tenant:${event.data.tenantId}:contents:approved`);
+    // await this.cacheService.set(`tenant:${event.data.tenantId}:contents:published`, ...);
+
+    // Example: Notify author (pseudo-code)
+    // await this.notificationService.notifyAuthor({
+    //   userId: event.data.authorId,
+    //   message: `Your content "${event.data.title}" has been published`,
+    //   publishedAt: event.data.publishedAt,
+    // });
+
+    // Example: Trigger SEO indexing (pseudo-code)
+    // await this.seoService.indexContent({
+    //   contentId: event.aggregateId,
+    //   title: event.data.title,
+    //   url: `/contents/${event.aggregateId}`,
+    // });
+
+    // Example: Update publication stats (pseudo-code)
+    // await this.statsService.incrementPublications(event.data.tenantId);
   }
 }

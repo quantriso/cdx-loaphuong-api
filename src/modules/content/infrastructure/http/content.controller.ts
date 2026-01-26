@@ -32,6 +32,7 @@ import {
   SubmitContentForApprovalCommand,
   ApproveContentCommand,
   RejectContentCommand,
+  PublishContentCommand,
 } from '../../application/commands';
 import { GetContentQuery } from '../../application/queries';
 
@@ -366,6 +367,56 @@ export class ContentController {
 
     return {
       message: 'Content rejected successfully',
+    };
+  }
+
+  /**
+   * Publish content
+   *
+   * Story 3.6: Publish Content
+   * POST /api/v1/contents/:id/publish
+   *
+   * Business Rules:
+   * - Only APPROVED content can be published
+   * - Only Admin can publish
+   * - Status transitions from APPROVED to PUBLISHED
+   */
+  @Post(':id/publish')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Publish content',
+    description:
+      'Publishes APPROVED content and emits ContentPublishedEvent. Status transitions from APPROVED to PUBLISHED. Admin only.',
+  })
+  @ApiParam({ name: 'id', description: 'Content ID (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Content published successfully',
+    schema: {
+      example: {
+        message: 'Content published successfully',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Cannot publish content (not in APPROVED status)',
+  })
+  @ApiResponse({ status: 404, description: 'Content not found' })
+  async publishContent(
+    @Param('id') id: string,
+    @Req() req: any,
+  ): Promise<{ message: string }> {
+    // Extract tenant and admin user from request (will be set by auth middleware)
+    const tenantId = req.user?.tenantId || 'mock-tenant-id';
+    const adminId = req.user?.id || 'mock-admin-id';
+
+    const command = new PublishContentCommand(id, tenantId, adminId);
+
+    await this.commandBus.execute(command);
+
+    return {
+      message: 'Content published successfully',
     };
   }
 }

@@ -5,6 +5,7 @@ import {
   ContentSubmittedForApprovalEvent,
   ContentApprovedEvent,
   ContentRejectedEvent,
+  ContentPublishedEvent,
 } from '../events';
 import { ContentStatus, ContentType, ContentPriority } from '../value-objects';
 
@@ -624,6 +625,61 @@ export class Content extends AggregateRoot {
           categoryId: this._props.categoryId,
           tags: [...this._props.tags],
           rejectionReason: rejectionReason.trim(),
+        },
+        metadata,
+      ),
+    );
+  }
+
+  /**
+   * Publish approved content
+   * Story 3.6: Transition APPROVED → PUBLISHED
+   *
+   * Business Rules:
+   * - Only APPROVED content can be published
+   * - Admin only operation
+   * - Status must transition validly (enforced by ContentStatus VO)
+   * - Emits ContentPublishedEvent
+   *
+   * @param publishedBy Admin user ID who published the content
+   * @param metadata Event metadata (correlationId, causationId, userId)
+   */
+  publish(publishedBy: string, metadata?: IEventMetadata): void {
+    if (!this._props.status.isApproved()) {
+      throw new DomainException(
+        `Cannot publish content. Current status: ${this._props.status.toString()}. Only APPROVED content can be published.`,
+      );
+    }
+
+    const previousStatus = this._props.status.toString();
+    const newStatus = ContentStatus.published();
+
+    // Validate transition (will throw if invalid)
+    if (!this._props.status.canTransitionTo(newStatus)) {
+      throw new DomainException(
+        `Invalid status transition from ${previousStatus} to ${newStatus.toString()}`,
+      );
+    }
+
+    // Update status
+    this._props.status = newStatus;
+
+    // Emit domain event
+    this.addDomainEvent(
+      new ContentPublishedEvent(
+        this.id,
+        {
+          tenantId: this.tenantId,
+          authorId: this.authorId,
+          publishedBy,
+          publishedAt: new Date(),
+          previousStatus,
+          newStatus: newStatus.toString(),
+          title: this._props.title,
+          type: this._props.type.toString(),
+          priority: this._props.priority.toString(),
+          categoryId: this._props.categoryId,
+          tags: [...this._props.tags],
         },
         metadata,
       ),
