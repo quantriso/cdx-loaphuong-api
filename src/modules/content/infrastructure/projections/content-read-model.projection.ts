@@ -13,7 +13,10 @@ import {
   ContentApprovedEvent,
   ContentRejectedEvent,
   ContentPublishedEvent,
+  ContentArchivedEvent,
 } from '../../domain/events';
+import { BulkContentPublishedEvent } from '../../domain/events/bulk-content-published.event';
+import { BulkContentArchivedEvent } from '../../domain/events/bulk-content-archived.event';
 import { contentsTable } from '../persistence/drizzle/schema';
 import { ContentReadDao } from '../persistence/read/content-read-dao';
 import { eq } from 'drizzle-orm';
@@ -86,6 +89,9 @@ class NestProjectionLogger implements IProjectionLogger {
   ContentApprovedEvent,
   ContentRejectedEvent,
   ContentPublishedEvent,
+  ContentArchivedEvent,
+  BulkContentPublishedEvent,
+  BulkContentArchivedEvent,
 )
 export class ContentReadModelProjection
   extends BaseProjection<
@@ -95,6 +101,9 @@ export class ContentReadModelProjection
     | ContentApprovedEvent
     | ContentRejectedEvent
     | ContentPublishedEvent
+    | ContentArchivedEvent
+    | BulkContentPublishedEvent
+    | BulkContentArchivedEvent
   >
   implements
     IEventHandler<
@@ -104,6 +113,9 @@ export class ContentReadModelProjection
       | ContentApprovedEvent
       | ContentRejectedEvent
       | ContentPublishedEvent
+      | ContentArchivedEvent
+      | BulkContentPublishedEvent
+      | BulkContentArchivedEvent
     >
 {
   // In-memory event tracking for demo (production should use Redis/DB)
@@ -129,7 +141,10 @@ export class ContentReadModelProjection
       | ContentSubmittedForApprovalEvent
       | ContentApprovedEvent
       | ContentRejectedEvent
-      | ContentPublishedEvent,
+      | ContentPublishedEvent
+      | ContentArchivedEvent
+      | BulkContentPublishedEvent
+      | BulkContentArchivedEvent,
   ): Promise<void> {
     switch (event.eventType) {
       case 'ContentCreated':
@@ -156,6 +171,18 @@ export class ContentReadModelProjection
 
       case 'ContentPublished':
         await this.onContentPublished(event as ContentPublishedEvent);
+        break;
+
+      case 'ContentArchived':
+        await this.onContentArchived(event as ContentArchivedEvent);
+        break;
+
+      case 'BulkContentPublished':
+        await this.onBulkContentPublished(event as BulkContentPublishedEvent);
+        break;
+
+      case 'BulkContentArchived':
+        await this.onBulkContentArchived(event as BulkContentArchivedEvent);
         break;
 
       default:
@@ -480,5 +507,130 @@ export class ContentReadModelProjection
 
     // Example: Update publication stats (pseudo-code)
     // await this.statsService.incrementPublications(event.data.tenantId);
+  }
+
+  /**
+   * Handle ContentArchivedEvent
+   *
+   * Story 3.7: Archive Content
+   *
+   * When content is archived by Admin:
+   * - Update cache to reflect ARCHIVED status
+   * - Remove from published lists
+   * - Update archive stats
+   */
+  private async onContentArchived(event: ContentArchivedEvent): Promise<void> {
+    this.logger.log(
+      `Processing ContentArchivedEvent: ${event.aggregateId} - ${event.data.title}`,
+    );
+
+    // Demo: Log the event (production would update cache/search index)
+    this.logger.debug(
+      `Content archived: ${JSON.stringify({
+        id: event.aggregateId,
+        tenantId: event.data.tenantId,
+        authorId: event.data.authorId,
+        archivedBy: event.data.archivedBy,
+        title: event.data.title,
+        previousStatus: event.data.previousStatus,
+        newStatus: event.data.newStatus,
+        archivedAt: event.data.archivedAt,
+        correlationId: event.metadata?.correlationId,
+      })}`,
+    );
+
+    // Invalidate cache
+    await this.contentReadDao.invalidateCache(event.aggregateId);
+
+    // Example: Update cache (pseudo-code)
+    // await this.cacheService.invalidate(`tenant:${event.data.tenantId}:contents:published`);
+    // await this.cacheService.set(`tenant:${event.data.tenantId}:contents:archived`, ...);
+
+    // Example: Update archive stats (pseudo-code)
+    // await this.statsService.incrementArchives(event.data.tenantId);
+  }
+
+  /**
+   * Handle BulkContentPublishedEvent
+   *
+   * Story 3.8: Bulk Publish Content
+   *
+   * When multiple contents are published in bulk:
+   * - Invalidate cache for all affected contents
+   * - Update published lists
+   * - Send batch notifications
+   */
+  private async onBulkContentPublished(
+    event: BulkContentPublishedEvent,
+  ): Promise<void> {
+    this.logger.log(
+      `Processing BulkContentPublishedEvent: ${event.data.successful} contents published`,
+    );
+
+    // Demo: Log the event
+    this.logger.debug(
+      `Bulk publish completed: ${JSON.stringify({
+        tenantId: event.data.tenantId,
+        totalRequested: event.data.totalRequested,
+        successful: event.data.successful,
+        failed: event.data.failed,
+        publishedBy: event.data.publishedBy,
+        batchReference: event.data.batchReference,
+        correlationId: event.metadata?.correlationId,
+      })}`,
+    );
+
+    // Invalidate cache for all published contents
+    const contentIds = event.data.items.map((item) => item.contentId);
+    await this.contentReadDao.invalidateCacheMany(contentIds);
+
+    // Example: Batch notification (pseudo-code)
+    // await this.notificationService.notifyBulkPublish({
+    //   tenantId: event.data.tenantId,
+    //   count: event.data.successful,
+    //   batchReference: event.data.batchReference,
+    // });
+  }
+
+  /**
+   * Handle BulkContentArchivedEvent
+   *
+   * Story 3.8: Bulk Archive Content
+   *
+   * When multiple contents are archived in bulk:
+   * - Invalidate cache for all affected contents
+   * - Update archive lists
+   * - Send batch notifications
+   */
+  private async onBulkContentArchived(
+    event: BulkContentArchivedEvent,
+  ): Promise<void> {
+    this.logger.log(
+      `Processing BulkContentArchivedEvent: ${event.data.successful} contents archived`,
+    );
+
+    // Demo: Log the event
+    this.logger.debug(
+      `Bulk archive completed: ${JSON.stringify({
+        tenantId: event.data.tenantId,
+        totalRequested: event.data.totalRequested,
+        successful: event.data.successful,
+        failed: event.data.failed,
+        archivedBy: event.data.archivedBy,
+        batchReference: event.data.batchReference,
+        correlationId: event.metadata?.correlationId,
+      })}`,
+    );
+
+    // Invalidate cache for all archived contents
+    const contentIds = event.data.items.map((item) => item.contentId);
+    await this.contentReadDao.invalidateCacheMany(contentIds);
+
+    // Example: Batch notification (pseudo-code)
+    // await this.notificationService.notifyBulkArchive({
+    //   tenantId: event.data.tenantId,
+    //   count: event.data.successful,
+    //   batchReference: event.data.batchReference,
+    // });
   }
 }

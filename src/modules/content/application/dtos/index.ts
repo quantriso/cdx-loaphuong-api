@@ -3,3 +3,6 @@ export * from './update-content.dto';
 export * from './content-response.dto';
 export * from './approve-content.dto';
 export * from './reject-content.dto';
+export * from './bulk-content-operations.dto';
+export * from './bulk-publish-content.dto';
+export * from './bulk-archive-content.dto';

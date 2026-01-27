@@ -4,3 +4,6 @@ export * from './content-submitted-for-approval.event';
 export * from './content-approved.event';
 export * from './content-rejected.event';
 export * from './content-published.event';
+export * from './content-archived.event';
+export * from './bulk-content-published.event';
+export * from './bulk-content-archived.event';

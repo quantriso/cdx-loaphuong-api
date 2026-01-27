@@ -25,6 +25,8 @@ import {
   ContentResponseDto,
   ApproveContentDto,
   RejectContentDto,
+  BulkPublishContentDto,
+  BulkArchiveContentDto,
 } from '../../application/dtos';
 import {
   CreateContentCommand,
@@ -33,6 +35,8 @@ import {
   ApproveContentCommand,
   RejectContentCommand,
   PublishContentCommand,
+  BulkPublishContentCommand,
+  BulkArchiveContentCommand,
 } from '../../application/commands';
 import { GetContentQuery } from '../../application/queries';
 
@@ -415,5 +419,139 @@ export class ContentController {
     return {
       message: 'Content published successfully',
     };
+  }
+
+  /**
+   * Bulk publish contents
+   *
+   * Story 3.8: Bulk Publish Content
+   * POST /api/v1/contents/bulk-publish
+   *
+   * Business Rules:
+   * - Only APPROVED contents can be published
+   * - Only Admin can publish
+   * - Supports partial success (some succeed, some fail)
+   * - Batch reference for tracking
+   */
+  @Post('bulk-publish')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Bulk publish contents',
+    description:
+      'Publishes multiple APPROVED contents in a single operation. Emits BulkContentPublishedEvent. Admin only.',
+  })
+  @ApiBody({ type: BulkPublishContentDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Bulk publish completed',
+    schema: {
+      example: {
+        totalRequested: 5,
+        successful: 4,
+        failed: 1,
+        results: [
+          {
+            contentId: 'content-1',
+            success: true,
+            previousStatus: 'APPROVED',
+            newStatus: 'PUBLISHED',
+          },
+          {
+            contentId: 'content-2',
+            success: false,
+            error: 'Content not in APPROVED status',
+          },
+        ],
+        warnings: [],
+        batchReference: 'batch-123',
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  async bulkPublishContents(
+    @Body() dto: BulkPublishContentDto,
+    @Req() req: any,
+  ) {
+    // Extract tenant and admin user from request (will be set by auth middleware)
+    const tenantId = req.user?.tenantId || dto.tenantId;
+    const adminId = req.user?.id || dto.adminId;
+
+    const command = new BulkPublishContentCommand(
+      dto.items,
+      adminId,
+      tenantId,
+      dto.options,
+    );
+
+    const result = await this.commandBus.execute(command);
+
+    return result;
+  }
+
+  /**
+   * Bulk archive contents
+   *
+   * Story 3.8: Bulk Archive Content
+   * POST /api/v1/contents/bulk-archive
+   *
+   * Business Rules:
+   * - Only PUBLISHED contents can be archived
+   * - Only Admin can archive
+   * - Supports partial success (some succeed, some fail)
+   * - Batch reference for tracking
+   */
+  @Post('bulk-archive')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Bulk archive contents',
+    description:
+      'Archives multiple PUBLISHED contents in a single operation. Emits BulkContentArchivedEvent. Admin only.',
+  })
+  @ApiBody({ type: BulkArchiveContentDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Bulk archive completed',
+    schema: {
+      example: {
+        totalRequested: 5,
+        successful: 4,
+        failed: 1,
+        results: [
+          {
+            contentId: 'content-1',
+            success: true,
+            previousStatus: 'PUBLISHED',
+            newStatus: 'ARCHIVED',
+          },
+          {
+            contentId: 'content-2',
+            success: false,
+            error: 'Content not in PUBLISHED status',
+          },
+        ],
+        warnings: [],
+        batchReference: 'batch-456',
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  async bulkArchiveContents(
+    @Body() dto: BulkArchiveContentDto,
+    @Req() req: any,
+  ) {
+    // Extract tenant and admin user from request (will be set by auth middleware)
+    const tenantId = req.user?.tenantId || dto.tenantId;
+    const adminId = req.user?.id || dto.adminId;
+
+    const command = new BulkArchiveContentCommand(
+      dto.items,
+      adminId,
+      tenantId,
+      dto.options,
+    );
+
+    const result = await this.commandBus.execute(command);
+
+    return result;
   }
 }
