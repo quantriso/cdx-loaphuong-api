@@ -6,7 +6,7 @@ import { BaseDomainEvent, IEventMetadata } from '@core/domain';
  * Story 3.2: Update Content
  * Emitted when content fields are updated
  */
-export interface ContentUpdatedPayload {
+export interface ContentUpdatedEventData {
   tenantId: string;
   contentId: string;
   authorId: string;
@@ -41,10 +41,10 @@ export interface ContentUpdatedPayload {
  * - Audit logging
  * - Analytics tracking
  */
-export class ContentUpdatedEvent extends BaseDomainEvent<ContentUpdatedPayload> {
+export class ContentUpdatedEvent extends BaseDomainEvent<ContentUpdatedEventData> {
   constructor(
     aggregateId: string,
-    data: ContentUpdatedPayload,
+    data: ContentUpdatedEventData,
     metadata?: IEventMetadata,
   ) {
     super(aggregateId, 'Content', 'ContentUpdated', data, metadata);

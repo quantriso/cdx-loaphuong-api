@@ -21,9 +21,10 @@ import { NotFoundException } from '@core/common';
  * 5. Event handlers update read model and send feedback to author
  */
 @CommandHandler(RejectContentCommand)
-export class RejectContentHandler
-  implements ICommandHandler<RejectContentCommand, void>
-{
+export class RejectContentHandler implements ICommandHandler<
+  RejectContentCommand,
+  void
+> {
   constructor(
     @Inject(CONTENT_REPOSITORY_TOKEN)
     private readonly contentRepository: IContentRepository,

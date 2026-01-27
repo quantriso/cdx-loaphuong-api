@@ -5,7 +5,7 @@ import { BaseDomainEvent, IEventMetadata } from '@core/domain';
  *
  * Story 3.3: Submit Content for Approval
  */
-export interface ContentSubmittedForApprovalPayload {
+export interface ContentSubmittedForApprovalEventData {
   tenantId: string;
   contentId: string;
   authorId: string;
@@ -35,10 +35,10 @@ export interface ContentSubmittedForApprovalPayload {
  * - Audit logging
  * - Analytics tracking
  */
-export class ContentSubmittedForApprovalEvent extends BaseDomainEvent<ContentSubmittedForApprovalPayload> {
+export class ContentSubmittedForApprovalEvent extends BaseDomainEvent<ContentSubmittedForApprovalEventData> {
   constructor(
     aggregateId: string,
-    data: ContentSubmittedForApprovalPayload,
+    data: ContentSubmittedForApprovalEventData,
     metadata?: IEventMetadata,
   ) {
     super(

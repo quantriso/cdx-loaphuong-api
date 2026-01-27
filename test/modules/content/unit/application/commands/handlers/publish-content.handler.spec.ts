@@ -84,9 +84,7 @@ describe('PublishContentHandler', () => {
       const command = new PublishContentCommand(contentId, tenantId, adminId);
 
       // Act & Assert
-      await expect(handler.execute(command)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
 
@@ -106,9 +104,7 @@ describe('PublishContentHandler', () => {
       const command = new PublishContentCommand(contentId, tenantId, adminId);
 
       // Act & Assert
-      await expect(handler.execute(command)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(handler.execute(command)).rejects.toThrow(NotFoundException);
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
   });

@@ -21,9 +21,10 @@ import { NotFoundException } from '@core/common';
  * 5. Event handlers update read model and remove from active lists
  */
 @CommandHandler(ArchiveContentCommand)
-export class ArchiveContentHandler
-  implements ICommandHandler<ArchiveContentCommand, void>
-{
+export class ArchiveContentHandler implements ICommandHandler<
+  ArchiveContentCommand,
+  void
+> {
   constructor(
     @Inject(CONTENT_REPOSITORY_TOKEN)
     private readonly contentRepository: IContentRepository,
