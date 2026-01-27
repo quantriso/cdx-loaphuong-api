@@ -1,4 +1,4 @@
-import { Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { DomainException } from '@core/common';
 import { CONTENT_HISTORY_TRACKER_TOKEN } from '../../constants/tokens';
 
@@ -79,6 +79,7 @@ export interface IContentHistoryTracker {
  * await historyService.recordChange(contentId, 'title', oldTitle, newTitle, userId);
  * ```
  */
+@Injectable()
 export class ContentHistoryService {
   constructor(
     @Inject(CONTENT_HISTORY_TRACKER_TOKEN)

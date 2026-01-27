@@ -2,7 +2,7 @@ import { QueryHandler, IQueryHandler } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import { NotFoundException } from '@core/common';
 import type { IContentRepository } from '../../../domain/repositories';
-import type { ContentHistoryService } from '../../../domain/services';
+import { ContentHistoryService } from '../../../domain/services';
 import { GetContentHistoryQuery } from '../get-content-history.query';
 import {
   GetContentHistoryResponseDto,

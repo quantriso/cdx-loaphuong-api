@@ -36,6 +36,7 @@ import {
   ApproveContentCommand,
   RejectContentCommand,
   PublishContentCommand,
+  ArchiveContentCommand,
   BulkPublishContentCommand,
   BulkArchiveContentCommand,
 } from '../../application/commands';
@@ -422,6 +423,56 @@ export class ContentController {
 
     return {
       message: 'Content published successfully',
+    };
+  }
+
+  /**
+   * Archive content
+   *
+   * Story 3.6: Archive Published Content
+   * POST /api/v1/contents/:id/archive
+   *
+   * Business Rules:
+   * - Only PUBLISHED content can be archived
+   * - Only Admin can archive
+   * - Status transitions from PUBLISHED to ARCHIVED
+   */
+  @Post(':id/archive')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Archive content',
+    description:
+      'Archives PUBLISHED content and emits ContentArchivedEvent. Status transitions from PUBLISHED to ARCHIVED. Admin only.',
+  })
+  @ApiParam({ name: 'id', description: 'Content ID (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Content archived successfully',
+    schema: {
+      example: {
+        message: 'Content archived successfully',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Cannot archive content (not in PUBLISHED status)',
+  })
+  @ApiResponse({ status: 404, description: 'Content not found' })
+  async archiveContent(
+    @Param('id') id: string,
+    @Req() req: any,
+  ): Promise<{ message: string }> {
+    // Extract tenant and admin user from request (will be set by auth middleware)
+    const tenantId = req.user?.tenantId || 'mock-tenant-id';
+    const adminId = req.user?.id || 'mock-admin-id';
+
+    const command = new ArchiveContentCommand(id, tenantId, adminId);
+
+    await this.commandBus.execute(command);
+
+    return {
+      message: 'Content archived successfully',
     };
   }
 
