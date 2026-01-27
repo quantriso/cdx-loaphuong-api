@@ -6,3 +6,4 @@ export * from './reject-content.dto';
 export * from './bulk-content-operations.dto';
 export * from './bulk-publish-content.dto';
 export * from './bulk-archive-content.dto';
+export * from './content-history-response.dto';

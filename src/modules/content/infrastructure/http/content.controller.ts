@@ -27,6 +27,7 @@ import {
   RejectContentDto,
   BulkPublishContentDto,
   BulkArchiveContentDto,
+  GetContentHistoryResponseDto,
 } from '../../application/dtos';
 import {
   CreateContentCommand,
@@ -38,7 +39,10 @@ import {
   BulkPublishContentCommand,
   BulkArchiveContentCommand,
 } from '../../application/commands';
-import { GetContentQuery } from '../../application/queries';
+import {
+  GetContentQuery,
+  GetContentHistoryQuery,
+} from '../../application/queries';
 
 /**
  * Content Controller
@@ -419,6 +423,43 @@ export class ContentController {
     return {
       message: 'Content published successfully',
     };
+  }
+
+  /**
+   * Get content history
+   *
+   * Story 3.9: View Content History
+   * GET /api/v1/contents/:id/history
+   *
+   * Business Rules:
+   * - Returns history of all content changes
+   * - Content must belong to requesting tenant
+   * - Ordered by timestamp (newest first)
+   * - Limited to recent entries (default: 50)
+   */
+  @Get(':id/history')
+  @ApiOperation({
+    summary: 'Get content history',
+    description:
+      'Retrieves the history of all changes made to a content item. Returns entries ordered by timestamp (newest first).',
+  })
+  @ApiParam({ name: 'id', description: 'Content ID (UUID)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Content history retrieved successfully',
+    type: GetContentHistoryResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Content not found' })
+  async getContentHistory(
+    @Param('id') id: string,
+    @Req() req: any,
+  ): Promise<GetContentHistoryResponseDto> {
+    // Extract tenant from request (will be set by auth middleware)
+    const tenantId = req.user?.tenantId || 'mock-tenant-id';
+
+    const query = new GetContentHistoryQuery(id, tenantId);
+
+    return this.queryBus.execute<GetContentHistoryResponseDto>(query);
   }
 
   /**
