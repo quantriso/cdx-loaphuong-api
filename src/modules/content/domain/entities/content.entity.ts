@@ -8,7 +8,12 @@ import {
   ContentPublishedEvent,
   ContentArchivedEvent,
 } from '../events';
-import { ContentStatus, ContentType, ContentPriority } from '../value-objects';
+import {
+  ContentId,
+  ContentStatus,
+  ContentType,
+  ContentPriority,
+} from '../value-objects';
 
 /**
  * Content Properties Interface
@@ -39,16 +44,18 @@ export interface ContentProps {
  * - Validation enforced: title ≤200, content ≤10000, excerpt ≤500
  */
 export class Content extends AggregateRoot {
+  private _contentId: ContentId;
   private _props: ContentProps;
 
   private constructor(
-    id: string,
+    id: ContentId,
     props: ContentProps,
     version: number = 0,
     createdAt: Date = new Date(),
     updatedAt: Date = new Date(),
   ) {
-    super(id, version, createdAt, updatedAt);
+    super(id.value, version, createdAt, updatedAt);
+    this._contentId = id;
     this._props = props;
   }
 
@@ -60,8 +67,8 @@ export class Content extends AggregateRoot {
    * Story 3.1: Create Content Draft
    */
   static create(
+    id: ContentId,
     params: {
-      id: string;
       tenantId: string;
       authorId: string;
       title: string;
@@ -84,7 +91,7 @@ export class Content extends AggregateRoot {
 
     const now = new Date();
     const content = new Content(
-      params.id,
+      id,
       {
         tenantId: params.tenantId,
         authorId: params.authorId,
@@ -112,8 +119,14 @@ export class Content extends AggregateRoot {
           tenantId: content.tenantId,
           authorId: content.authorId,
           title: content.title,
+          content: content.content,
+          excerpt: content.excerpt,
           type: content.type.toString(),
           status: content.status.toString(),
+          priority: content.priority.toString(),
+          categoryId: content.categoryId,
+          tags: content.tags,
+          featuredImage: content.featuredImage,
         },
         metadata,
       ),
@@ -144,7 +157,7 @@ export class Content extends AggregateRoot {
     updatedAt: Date;
   }): Content {
     return new Content(
-      params.id,
+      new ContentId(params.id),
       {
         tenantId: params.tenantId,
         authorId: params.authorId,
@@ -165,6 +178,13 @@ export class Content extends AggregateRoot {
   }
 
   // --- Getters ---
+
+  /**
+   * Get ContentId Value Object
+   */
+  get contentId(): ContentId {
+    return this._contentId;
+  }
 
   get tenantId(): string {
     return this._props.tenantId;

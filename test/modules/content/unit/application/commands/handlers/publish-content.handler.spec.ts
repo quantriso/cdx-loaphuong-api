@@ -5,6 +5,7 @@ import { IContentRepository } from '@modules/content/domain/repositories';
 import { CONTENT_REPOSITORY_TOKEN } from '@modules/content/constants/tokens';
 import { Content } from '@modules/content/domain/entities';
 import {
+  ContentId,
   ContentStatus,
   ContentType,
   ContentPriority,
@@ -47,8 +48,7 @@ describe('PublishContentHandler', () => {
 
     it('should publish APPROVED content successfully', async () => {
       // Arrange
-      const content = Content.create({
-        id: contentId,
+      const content = Content.create(new ContentId(contentId), {
         tenantId,
         authorId: 'author-789',
         title: 'Test Content',
@@ -90,8 +90,7 @@ describe('PublishContentHandler', () => {
 
     it('should throw NotFoundException if content belongs to different tenant', async () => {
       // Arrange
-      const content = Content.create({
-        id: contentId,
+      const content = Content.create(new ContentId(contentId), {
         tenantId: 'different-tenant',
         authorId: 'author-789',
         title: 'Test Content',

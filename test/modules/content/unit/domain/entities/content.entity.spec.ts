@@ -1,5 +1,6 @@
 import { Content } from '../../../../../../src/modules/content/domain/entities';
 import {
+  ContentId,
   ContentType,
   ContentStatus,
   ContentPriority,
@@ -7,10 +8,7 @@ import {
 import { DomainException } from '@core/domain';
 
 describe('Content Entity', () => {
-  const createValidProps = (): Omit<
-    Parameters<typeof Content.create>[0],
-    'id'
-  > => ({
+  const createValidProps = (): Parameters<typeof Content.create>[1] => ({
     tenantId: 'tenant-123',
     authorId: 'author-123',
     title: 'Test Content Title',
@@ -25,9 +23,10 @@ describe('Content Entity', () => {
 
   describe('create', () => {
     it('should create a valid content with all properties', () => {
+      const contentId = new ContentId('content-123');
       const props = createValidProps();
 
-      const content = Content.create({ id: 'content-123', ...props });
+      const content = Content.create(contentId, props);
 
       expect(content.id).toBe('content-123');
       expect(content.tenantId).toBe('tenant-123');
@@ -46,14 +45,16 @@ describe('Content Entity', () => {
     });
 
     it('should create content with default priority MEDIUM', () => {
+      const contentId = new ContentId('content-123');
       const props = { ...createValidProps(), priority: undefined };
 
-      const content = Content.create({ id: 'content-123', ...props });
+      const content = Content.create(contentId, props);
 
       expect(content.priority.toString()).toBe('MEDIUM');
     });
 
     it('should create content without optional fields', () => {
+      const contentId = new ContentId('content-123');
       const props = {
         tenantId: 'tenant-123',
         authorId: 'author-123',
@@ -62,7 +63,7 @@ describe('Content Entity', () => {
         type: ContentType.news(),
       };
 
-      const content = Content.create({ id: 'content-123', ...props });
+      const content = Content.create(contentId, props);
 
       expect(content.excerpt).toBeNull();
       expect(content.categoryId).toBeNull();
@@ -71,9 +72,10 @@ describe('Content Entity', () => {
     });
 
     it('should emit ContentCreatedEvent', () => {
+      const contentId = new ContentId('content-123');
       const props = createValidProps();
 
-      const content = Content.create({ id: 'content-123', ...props });
+      const content = Content.create(contentId, props);
       const events = content.getDomainEvents();
 
       expect(events).toHaveLength(1);
@@ -90,9 +92,10 @@ describe('Content Entity', () => {
     });
 
     it('should start with DRAFT status', () => {
+      const contentId = new ContentId('content-123');
       const props = createValidProps();
 
-      const content = Content.create({ id: 'content-123', ...props });
+      const content = Content.create(contentId, props);
 
       expect(content.status.isDraft()).toBe(true);
       expect(content.canEdit()).toBe(true);
@@ -100,56 +103,51 @@ describe('Content Entity', () => {
 
     // Validation tests
     it('should throw DomainException for empty title', () => {
+      const contentId = new ContentId('content-123');
       const props = { ...createValidProps(), title: '' };
 
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
-        DomainException,
-      );
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
+      expect(() => Content.create(contentId, props)).toThrow(DomainException);
+      expect(() => Content.create(contentId, props)).toThrow(
         'Content title is required',
       );
     });
 
     it('should throw DomainException for title exceeding 200 characters', () => {
+      const contentId = new ContentId('content-123');
       const props = { ...createValidProps(), title: 'a'.repeat(201) };
 
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
-        DomainException,
-      );
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
+      expect(() => Content.create(contentId, props)).toThrow(DomainException);
+      expect(() => Content.create(contentId, props)).toThrow(
         'Content title cannot exceed 200 characters',
       );
     });
 
     it('should throw DomainException for empty content body', () => {
+      const contentId = new ContentId('content-123');
       const props = { ...createValidProps(), content: '' };
 
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
-        DomainException,
-      );
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
+      expect(() => Content.create(contentId, props)).toThrow(DomainException);
+      expect(() => Content.create(contentId, props)).toThrow(
         'Content body is required',
       );
     });
 
     it('should throw DomainException for content body exceeding 10000 characters', () => {
+      const contentId = new ContentId('content-123');
       const props = { ...createValidProps(), content: 'a'.repeat(10001) };
 
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
-        DomainException,
-      );
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
+      expect(() => Content.create(contentId, props)).toThrow(DomainException);
+      expect(() => Content.create(contentId, props)).toThrow(
         'Content body cannot exceed 10000 characters',
       );
     });
 
     it('should throw DomainException for excerpt exceeding 500 characters', () => {
+      const contentId = new ContentId('content-123');
       const props = { ...createValidProps(), excerpt: 'a'.repeat(501) };
 
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
-        DomainException,
-      );
-      expect(() => Content.create({ id: 'content-123', ...props })).toThrow(
+      expect(() => Content.create(contentId, props)).toThrow(DomainException);
+      expect(() => Content.create(contentId, props)).toThrow(
         'Content excerpt cannot exceed 500 characters',
       );
     });
@@ -183,8 +181,9 @@ describe('Content Entity', () => {
 
   describe('canEdit', () => {
     it('should return true for DRAFT status', () => {
+      const contentId = new ContentId('content-123');
       const props = createValidProps();
-      const content = Content.create({ id: 'content-123', ...props });
+      const content = Content.create(contentId, props);
 
       expect(content.canEdit()).toBe(true);
     });

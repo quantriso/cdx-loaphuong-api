@@ -4,6 +4,7 @@ import { IContentRepository } from '../../../../../../../src/modules/content/dom
 import { IContentReadDao } from '../../../../../../../src/modules/content/application/queries/ports';
 import { Content } from '../../../../../../../src/modules/content/domain/entities';
 import {
+  ContentId,
   ContentType,
   ContentStatus,
 } from '../../../../../../../src/modules/content/domain/value-objects';
@@ -36,8 +37,7 @@ describe('SubmitContentForApprovalHandler', () => {
   describe('execute', () => {
     it('should submit DRAFT content for approval', async () => {
       // Arrange
-      const content = Content.create({
-        id: 'content-1',
+      const content = Content.create(new ContentId('content-1'), {
         tenantId: 'tenant-1',
         authorId: 'author-1',
         title: 'Test Content',
@@ -83,8 +83,7 @@ describe('SubmitContentForApprovalHandler', () => {
 
     it('should throw NotFoundException if tenant does not match', async () => {
       // Arrange
-      const content = Content.create({
-        id: 'content-1',
+      const content = Content.create(new ContentId('content-1'), {
         tenantId: 'tenant-1',
         authorId: 'author-1',
         title: 'Test Content',
@@ -107,8 +106,7 @@ describe('SubmitContentForApprovalHandler', () => {
 
     it('should throw BadRequestException if user is not author', async () => {
       // Arrange
-      const content = Content.create({
-        id: 'content-1',
+      const content = Content.create(new ContentId('content-1'), {
         tenantId: 'tenant-1',
         authorId: 'author-1',
         title: 'Test Content',
@@ -133,8 +131,7 @@ describe('SubmitContentForApprovalHandler', () => {
 
     it('should throw DomainException if content is not in DRAFT status', async () => {
       // Arrange
-      const content = Content.create({
-        id: 'content-1',
+      const content = Content.create(new ContentId('content-1'), {
         tenantId: 'tenant-1',
         authorId: 'author-1',
         title: 'Test Content',
@@ -160,8 +157,7 @@ describe('SubmitContentForApprovalHandler', () => {
 
     it('should emit ContentSubmittedForApprovalEvent', async () => {
       // Arrange
-      const content = Content.create({
-        id: 'content-1',
+      const content = Content.create(new ContentId('content-1'), {
         tenantId: 'tenant-1',
         authorId: 'author-1',
         title: 'Test Content',

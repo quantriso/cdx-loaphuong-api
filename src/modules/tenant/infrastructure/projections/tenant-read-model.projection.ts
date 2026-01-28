@@ -6,7 +6,11 @@ import {
 } from '@core/application';
 import { DATABASE_WRITE_TOKEN, EventsHandler, type DrizzleDB } from '@shared';
 import { TENANT_READ_DAO_TOKEN } from '../../constants/tokens';
-import { TenantCreatedEvent, TenantDeletedEvent } from '../../domain/events';
+import {
+  TenantCreatedEvent,
+  TenantUpdatedEvent,
+  TenantDeletedEvent,
+} from '../../domain/events';
 import { tenantsTable } from '../persistence/drizzle/schema';
 import { TenantReadDao } from '../persistence/read/tenant-read-dao';
 import { eq } from 'drizzle-orm';
@@ -68,10 +72,13 @@ class NestProjectionLogger implements IProjectionLogger {
  * // 4. Projection.handle() → Update cache/search/etc.
  */
 @Injectable()
-@EventsHandler(TenantCreatedEvent, TenantDeletedEvent)
+@EventsHandler(TenantCreatedEvent, TenantUpdatedEvent, TenantDeletedEvent)
 export class TenantReadModelProjection
-  extends BaseProjection<TenantCreatedEvent | TenantDeletedEvent>
-  implements IEventHandler<TenantCreatedEvent | TenantDeletedEvent>
+  extends BaseProjection<
+    TenantCreatedEvent | TenantUpdatedEvent | TenantDeletedEvent
+  >
+  implements
+    IEventHandler<TenantCreatedEvent | TenantUpdatedEvent | TenantDeletedEvent>
 {
   // In-memory event tracking for demo (production should use Redis/DB)
   private processedEvents: Set<string> = new Set();
@@ -89,10 +96,16 @@ export class TenantReadModelProjection
    * Main handle method (required by BaseProjection abstract class)
    * This is the actual projection logic that processes events
    */
-  async handle(event: TenantCreatedEvent | TenantDeletedEvent): Promise<void> {
+  async handle(
+    event: TenantCreatedEvent | TenantUpdatedEvent | TenantDeletedEvent,
+  ): Promise<void> {
     switch (event.eventType) {
       case 'TenantCreated':
         await this.onTenantCreated(event as TenantCreatedEvent);
+        break;
+
+      case 'TenantUpdated':
+        await this.onTenantUpdated(event as TenantUpdatedEvent);
         break;
 
       case 'TenantDeleted':
@@ -154,6 +167,35 @@ export class TenantReadModelProjection
     //   index: 'tenants',
     //   id: event.aggregateId,
     //   body: event.data,
+    // });
+  }
+
+  /**
+   * Handle TenantUpdatedEvent
+   *
+   * Khi tenant được update:
+   * - Invalidate cache để force refresh
+   * - Update search index nếu có
+   */
+  private async onTenantUpdated(event: TenantUpdatedEvent): Promise<void> {
+    this.logger.log(`Processing TenantUpdatedEvent: ${event.aggregateId}`);
+
+    this.logger.debug(
+      `Tenant updated: ${JSON.stringify({
+        id: event.aggregateId,
+        changes: event.data,
+        correlationId: event.metadata?.correlationId,
+      })}`,
+    );
+
+    // Invalidate cache to force refresh from DB
+    await this.tenantReadDao.invalidateCache(event.aggregateId);
+
+    // Example: Update search index (pseudo-code)
+    // await this.searchClient.update({
+    //   index: 'tenants',
+    //   id: event.aggregateId,
+    //   body: { doc: event.data },
     // });
   }
 

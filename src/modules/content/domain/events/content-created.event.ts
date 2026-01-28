@@ -8,8 +8,14 @@ export interface ContentCreatedEventData {
   tenantId: string;
   authorId: string;
   title: string;
+  content: string;
+  excerpt: string | null;
   type: string;
   status: string;
+  priority: string;
+  categoryId: string | null;
+  tags: string[];
+  featuredImage: string | null;
 }
 
 /**

@@ -1,9 +1,12 @@
-import { randomUUID } from 'crypto';
 import { Injectable, Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { CreateContentCommand } from '../create-content.command';
 import { Content } from '../../../domain/entities';
-import { ContentType, ContentPriority } from '../../../domain/value-objects';
+import {
+  ContentId,
+  ContentType,
+  ContentPriority,
+} from '../../../domain/value-objects';
 import type { IContentRepository } from '../../../domain/repositories';
 import { CONTENT_REPOSITORY_TOKEN } from '../../../constants/tokens';
 
@@ -26,28 +29,30 @@ export class CreateContentHandler implements ICommandHandler<
 
   async execute(command: CreateContentCommand): Promise<string> {
     // Generate new ID
-    const contentId = randomUUID();
+    const contentId = ContentId.generate();
 
     // Create Content aggregate
-    const content = Content.create({
-      id: contentId,
-      tenantId: command.tenantId,
-      authorId: command.authorId,
-      title: command.title,
-      content: command.content,
-      excerpt: command.excerpt,
-      type: ContentType.fromValue(command.type),
-      priority: command.priority
-        ? ContentPriority.fromValue(command.priority)
-        : ContentPriority.medium(),
-      categoryId: command.categoryId,
-      tags: command.tags,
-      featuredImage: command.featuredImage,
-    });
+    const content = Content.create(
+      contentId,
+      {
+        tenantId: command.tenantId,
+        authorId: command.authorId,
+        title: command.title,
+        content: command.content,
+        excerpt: command.excerpt,
+        type: ContentType.fromValue(command.type),
+        priority: command.priority
+          ? ContentPriority.fromValue(command.priority)
+          : ContentPriority.medium(),
+        categoryId: command.categoryId,
+        tags: command.tags,
+        featuredImage: command.featuredImage,
+      },
+    );
 
     // Save aggregate (will publish ContentCreatedEvent)
     await this.contentRepository.save(content);
 
-    return contentId;
+    return contentId.value;
   }
 }

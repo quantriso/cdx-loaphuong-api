@@ -5,6 +5,7 @@ import {
   IEventMetadata,
 } from '@core/domain';
 import { TenantCreatedEvent } from '../events/tenant-created.event';
+import { TenantUpdatedEvent } from '../events/tenant-updated.event';
 import { TenantDeletedEvent } from '../events/tenant-deleted.event';
 import { TenantStatus, TenantStatusEnum, TenantId } from '../value-objects';
 
@@ -324,7 +325,19 @@ export class Tenant extends AggregateRoot implements ISoftDeletable {
     }
 
     if (hasChanges) {
-      this.markAsModified();
+      // Emit TenantUpdatedEvent (addDomainEvent already calls markAsModified)
+      this.addDomainEvent(
+        new TenantUpdatedEvent(
+          this.id,
+          {
+            id: this.id,
+            name: params.name,
+            brandingConfig: params.brandingConfig,
+            limits: params.limits,
+          },
+          metadata,
+        ),
+      );
     }
   }
 

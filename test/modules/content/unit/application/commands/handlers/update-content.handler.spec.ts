@@ -2,7 +2,10 @@ import { UpdateContentHandler } from '../../../../../../../src/modules/content/a
 import { UpdateContentCommand } from '../../../../../../../src/modules/content/application/commands';
 import { IContentRepository } from '../../../../../../../src/modules/content/domain/repositories';
 import { Content } from '../../../../../../../src/modules/content/domain/entities';
-import { ContentType } from '../../../../../../../src/modules/content/domain/value-objects';
+import {
+  ContentId,
+  ContentType,
+} from '../../../../../../../src/modules/content/domain/value-objects';
 import { ContentCacheService } from '../../../../../../../src/modules/content/application/services/content-cache.service';
 import { ContentValidatorService } from '../../../../../../../src/modules/content/domain/services/content-validator.service';
 import { ContentHistoryService } from '../../../../../../../src/modules/content/domain/services/content-history.service';
@@ -54,8 +57,7 @@ describe('UpdateContentHandler', () => {
   describe('execute', () => {
     it('should update content title', async () => {
       // Arrange
-      const content = Content.create({
-        id: 'content-1',
+      const content = Content.create(new ContentId('content-1'), {
         tenantId: 'tenant-1',
         authorId: 'author-1',
         title: 'Original Title',
@@ -103,8 +105,7 @@ describe('UpdateContentHandler', () => {
 
     it('should update content body', async () => {
       // Arrange
-      const content = Content.create({
-        id: 'content-1',
+      const content = Content.create(new ContentId('content-1'), {
         tenantId: 'tenant-1',
         authorId: 'author-1',
         title: 'Test Title',
@@ -169,8 +170,7 @@ describe('UpdateContentHandler', () => {
 
     it('should throw NotFoundException if tenant does not match', async () => {
       // Arrange
-      const content = Content.create({
-        id: 'content-1',
+      const content = Content.create(new ContentId('content-1'), {
         tenantId: 'tenant-1',
         authorId: 'author-1',
         title: 'Test Title',
@@ -201,8 +201,7 @@ describe('UpdateContentHandler', () => {
 
     it('should update multiple fields at once', async () => {
       // Arrange
-      const content = Content.create({
-        id: 'content-1',
+      const content = Content.create(new ContentId('content-1'), {
         tenantId: 'tenant-1',
         authorId: 'author-1',
         title: 'Original Title',
