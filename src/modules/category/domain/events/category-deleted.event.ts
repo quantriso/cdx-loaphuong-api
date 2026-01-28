@@ -8,7 +8,6 @@ import { BaseDomainEvent, type IEventMetadata } from '@core/domain';
 export interface CategoryDeletedEventData {
   tenantId: string;
   value: string;
-  deletedBy: string;
 }
 
 /**

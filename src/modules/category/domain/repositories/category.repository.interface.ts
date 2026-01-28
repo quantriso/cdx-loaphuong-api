@@ -45,13 +45,12 @@ export interface ICategoryRepository extends IAggregateRepository<Category> {
   existsByValue(tenantId: string, value: string): Promise<boolean>;
 
   /**
+   * Count categories for a tenant
+   */
+  countByTenantId(tenantId: string): Promise<number>;
+
+  /**
    * Count child categories
-   *
-   * Used to prevent deletion of categories with children.
-   *
-   * @param parentId Parent category ID
-   * @param tenantId Tenant ID
-   * @returns Number of child categories
    */
   countChildren(parentId: string, tenantId: string): Promise<number>;
 }

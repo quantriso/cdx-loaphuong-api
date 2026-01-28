@@ -191,9 +191,20 @@ export class CategoryRepository
     return result.length > 0;
   }
 
-  /**
-   * Count children of a category
-   */
+  async countByTenantId(tenantId: string): Promise<number> {
+    const result = await this.db
+      .select({ id: categoriesTable.id })
+      .from(categoriesTable)
+      .where(
+        and(
+          eq(categoriesTable.tenantId, tenantId),
+          eq(categoriesTable.isDeleted, false),
+        ),
+      );
+
+    return result.length;
+  }
+
   async countChildren(parentId: string, tenantId: string): Promise<number> {
     const result = await this.db
       .select({ id: categoriesTable.id })

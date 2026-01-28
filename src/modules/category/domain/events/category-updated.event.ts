@@ -14,7 +14,6 @@ export interface CategoryUpdatedEventData {
   isActive: boolean | null;
   sortOrder: number | null;
   parentId: string | null;
-  updatedBy: string;
 }
 
 /**

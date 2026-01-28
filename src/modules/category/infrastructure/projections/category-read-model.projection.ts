@@ -199,7 +199,6 @@ export class CategoryReadModelProjection
       `Category updated: ${JSON.stringify({
         id: event.aggregateId,
         tenantId: event.data.tenantId,
-        updatedBy: event.data.updatedBy,
         label: event.data.label,
         isActive: event.data.isActive,
         correlationId: event.metadata?.correlationId,
@@ -245,7 +244,6 @@ export class CategoryReadModelProjection
         id: event.aggregateId,
         tenantId: event.data.tenantId,
         value: event.data.value,
-        deletedBy: event.data.deletedBy,
         correlationId: event.metadata?.correlationId,
       })}`,
     );

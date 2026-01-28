@@ -9,13 +9,12 @@ export interface CategoryCreatedEventData {
   tenantId: string;
   value: string;
   label: string;
-  description: string | null;
-  color: string | null;
-  icon: string | null;
+  description: string;
+  color: string;
+  icon: string;
   isActive: boolean;
   sortOrder: number;
-  parentId: string | null;
-  createdBy: string;
+  parentId: string;
 }
 
 /**

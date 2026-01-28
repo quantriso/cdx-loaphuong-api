@@ -188,7 +188,6 @@ describe('Category Entity', () => {
         tenantId: 'tenant-123',
         value: 'EMERGENCY',
         label: 'Emergency Alerts',
-        createdBy: 'admin-123',
       });
     });
   });
@@ -278,7 +277,6 @@ describe('Category Entity', () => {
       expect(events[0].data).toMatchObject({
         tenantId: 'tenant-123',
         label: 'Updated Label',
-        updatedBy: 'admin-456',
       });
     });
   });
@@ -423,7 +421,6 @@ describe('Category Entity', () => {
       expect(events[0].data).toMatchObject({
         tenantId: 'tenant-123',
         value: 'TEST',
-        deletedBy: 'admin-456',
       });
     });
   });
