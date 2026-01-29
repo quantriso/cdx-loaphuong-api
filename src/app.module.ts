@@ -14,6 +14,8 @@ import {
 } from '@shared';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { ContentModule } from './modules/content/content.module';
+import { CategoryModule } from './modules/category/category.module';
+import { TagModule } from './modules/tag/tag.module';
 
 @Global()
 @Module({
@@ -41,6 +43,8 @@ import { ContentModule } from './modules/content/content.module';
     // Feature modules will be added here as we implement them
     TenantModule,
     ContentModule,
+    CategoryModule,
+    TagModule,
   ],
 })
 export class AppModule implements NestModule {
