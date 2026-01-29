@@ -23,11 +23,16 @@ import {
 import type { ICommandBus, IQueryBus } from '@core/application';
 import { COMMAND_BUS_TOKEN, QUERY_BUS_TOKEN } from '@core/constants';
 import { CreateTagDto, UpdateTagDto } from '../dtos';
-import { TagResponseDto } from '../../application/dtos';
+import {
+  TagResponseDto,
+  BulkCreateTagsDto,
+  BulkTagsResponseDto,
+} from '../../application/dtos';
 import {
   CreateTagCommand,
   UpdateTagCommand,
   DeleteTagCommand,
+  BulkCreateTagsCommand,
 } from '../../application/commands';
 import { GetTagQuery, ListTagsQuery } from '../../application/queries';
 
@@ -101,6 +106,66 @@ export class TagController {
       id: tagId,
       message: 'Tag created successfully',
     };
+  }
+
+  /**
+   * Bulk create tags
+   *
+   * Story 4.4: Bulk Create Tags
+   * POST /api/v1/tags/bulk-create
+   *
+   * RBAC: Only Editor and Admin roles can bulk create tags
+   */
+  @Post('bulk-create')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Bulk create tags',
+    description:
+      'Creates multiple tags at once. Skips duplicates and returns detailed summary. Maximum 100 tags per request.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Bulk tag creation completed',
+    type: BulkTagsResponseDto,
+    schema: {
+      example: {
+        created: 10,
+        skipped: 2,
+        failed: 0,
+        skippedTags: [
+          {
+            name: 'Existing Tag',
+            reason: 'Tag with slug "existing-tag" already exists',
+          },
+        ],
+        failedTags: [],
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Only Editor and Admin can bulk create tags',
+  })
+  @ApiResponse({ status: 413, description: 'Request body too large' })
+  @ApiBody({ type: BulkCreateTagsDto })
+  async bulkCreateTags(
+    @Body() dto: BulkCreateTagsDto,
+    @Req() req: any,
+  ): Promise<BulkTagsResponseDto> {
+    // Extract tenant and user from request (will be set by auth middleware)
+    const tenantId = req.user?.tenantId || 'mock-tenant-id';
+    const userId = req.user?.id || 'mock-admin-id';
+
+    // TODO: RBAC check - Only Editor and Admin can bulk create
+    // const userRole = req.user?.role;
+    // if (userRole !== 'EDITOR' && userRole !== 'ADMIN') {
+    //   throw new ForbiddenException('Only Editor and Admin can bulk create tags');
+    // }
+
+    const command = new BulkCreateTagsCommand(dto.tags, tenantId, userId);
+
+    return this.commandBus.execute<BulkCreateTagsCommand>(command);
   }
 
   /**

@@ -2,9 +2,9 @@ import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 
 // Core imports
-import type { IEventBus, IOutboxRepository } from '@core/infrastructure';
-import { ConcurrencyException } from '@core/common';
-import { OUTBOX_REPOSITORY_TOKEN } from '@core/constants';
+import type { IEventBus, IOutboxRepository } from 'src/libs/core/infrastructure';
+import { ConcurrencyException } from 'src/libs/core/common';
+import { OUTBOX_REPOSITORY_TOKEN } from 'src/libs/core/constants';
 
 // Shared imports
 import {
@@ -14,7 +14,7 @@ import {
   DATABASE_WRITE_TOKEN,
   type DrizzleDB,
   type DrizzleTransaction,
-} from '@shared';
+} from 'src/libs/shared';
 
 // Domain imports
 import { Tag } from '../../../domain/entities';

@@ -2,8 +2,8 @@ import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { eq, and, asc, sql } from 'drizzle-orm';
 
 // Import from Core (interfaces)
-import type { ICacheService } from '@core/infrastructure';
-import { CACHE_SERVICE_TOKEN } from '@core/constants';
+import type { ICacheService } from 'src/libs/core/infrastructure';
+import { CACHE_SERVICE_TOKEN } from 'src/libs/core/constants';
 
 // Import from Shared (implementations)
 import {
@@ -11,7 +11,7 @@ import {
   DATABASE_READ_TOKEN,
   type DrizzleDB,
   schema,
-} from '@shared';
+} from 'src/libs/shared';
 
 // Import Application DTOs & Ports
 import { TagResponseDto } from '../../../application/dtos';
