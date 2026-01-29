@@ -247,7 +247,7 @@ describe('TagController - Bulk Create Integration', () => {
       await controller.bulkCreateTags(dto, req);
 
       // Assert
-      const executedCommand = commandBus.execute.mock.calls[0][0];
+      const executedCommand = commandBus.execute.mock.calls[0][0] as BulkCreateTagsCommand;
       expect(executedCommand).toBeInstanceOf(BulkCreateTagsCommand);
       expect(executedCommand.tags).toEqual(dto.tags);
       expect(executedCommand.tenantId).toBe('tenant-123');

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { SharedCqrsModule, SharedModule } from '@shared';
+import { SharedCqrsModule, SharedModule } from 'src/libs/shared';
 
 // Application - Handlers
 import { CommandHandlers } from './application/commands/handlers';

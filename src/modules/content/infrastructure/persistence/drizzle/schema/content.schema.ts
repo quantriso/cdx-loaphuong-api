@@ -36,6 +36,9 @@ export const contentsTable = pgTable(
 
     // Media
     featuredImage: varchar('featured_image', { length: 500 }),
+
+    // Tags (DEPRECATED - Story 4.5: Migrating to content_tags junction table)
+    // TODO: Remove after migration complete
     tags: jsonb('tags').default([]),
 
     // Concurrency control

@@ -1,10 +1,11 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { QueryHandler, IQueryHandler } from '@nestjs/cqrs';
+import { IQueryHandler } from 'src/libs/core/application';
+import { QueryHandler } from 'src/libs/shared/cqrs';
 import { GetContentQuery } from '../get-content.query';
 import { ContentResponseDto } from '../../dtos';
 import type { IContentReadDao } from '../ports';
 import { CONTENT_READ_DAO_TOKEN } from '../../../constants/tokens';
-import { NotFoundException } from '@core/common';
+import { NotFoundException } from 'src/libs/core/common';
 
 /**
  * Get Content Query Handler

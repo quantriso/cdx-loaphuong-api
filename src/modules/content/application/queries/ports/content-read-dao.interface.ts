@@ -1,4 +1,5 @@
 import { ContentResponseDto } from '../../dtos';
+import { PaginatedResponseDto } from 'src/libs/shared/http/dtos/pagination.dto';
 
 /**
  * Content Read DAO Interface (Port)
@@ -44,6 +45,32 @@ export interface IContentReadDao {
     tenantId: string,
     status?: string,
   ): Promise<ContentResponseDto[]>;
+
+  /**
+   * List contents with filtering, sorting, and pagination
+   *
+   * Story 4.5: Filter Content by Category & Tags
+   *
+   * @param tenantId Tenant ID
+   * @param filters Filter parameters
+   * @returns Paginated list of ContentResponseDto
+   */
+  listContents(
+    tenantId: string,
+    filters: {
+      page: number;
+      limit: number;
+      category?: string;
+      tags?: string[];
+      dateFrom?: string;
+      dateTo?: string;
+      type?: string;
+      authorId?: string;
+      status?: string[];
+      sortBy: string;
+      sortOrder: string;
+    },
+  ): Promise<PaginatedResponseDto<ContentResponseDto>>;
 
   /**
    * Invalidate cache for a specific content

@@ -108,6 +108,7 @@
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/src/$1",
       "^@core$": "<rootDir>/src/libs/core/index.ts",
       "^@core/(.*)$": "<rootDir>/src/libs/core/$1",
       "^@shared$": "<rootDir>/src/libs/shared/index.ts",

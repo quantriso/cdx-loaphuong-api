@@ -11,7 +11,7 @@ import {
   schema,
   ContextModule,
   CorrelationIdMiddleware,
-} from '@shared';
+} from 'src/libs/shared';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { ContentModule } from './modules/content/content.module';
 import { CategoryModule } from './modules/category/category.module';

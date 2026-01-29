@@ -1,6 +1,7 @@
-import { QueryHandler, IQueryHandler } from '@nestjs/cqrs';
+import { IQueryHandler } from 'src/libs/core/application';
+import { QueryHandler } from 'src/libs/shared/cqrs';
 import { Inject } from '@nestjs/common';
-import { NotFoundException } from '@core/common';
+import { NotFoundException } from 'src/libs/core/common';
 import type { IContentRepository } from '../../../domain/repositories';
 import { ContentHistoryService } from '../../../domain/services';
 import { GetContentHistoryQuery } from '../get-content-history.query';

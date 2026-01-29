@@ -196,9 +196,23 @@ describe('BulkCreateTagsHandler', () => {
         'user-1',
       );
 
+      const mockTag = Tag.create(
+        TagId.generate(),
+        {
+          tenantId: 'tenant-1',
+          name: 'Emergency',
+          slug: 'emergency',
+          category: TagCategory.EMERGENCY,
+          synonyms: [],
+          isActive: true,
+          usageCount: 0,
+        },
+        'user-1',
+      );
+
       tagRepository.findBySlug.mockResolvedValue(null);
       tagRepository.save
-        .mockResolvedValueOnce() // First save succeeds
+        .mockResolvedValueOnce(mockTag) // First save succeeds
         .mockRejectedValueOnce(new Error('Database error')); // Second save fails
 
       // Act
@@ -257,6 +271,7 @@ describe('BulkCreateTagsHandler', () => {
       let savedTag: Tag | undefined;
       tagRepository.save.mockImplementation(async (tag) => {
         savedTag = tag;
+        return tag;
       });
 
       // Act

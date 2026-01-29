@@ -9,6 +9,7 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,9 +17,10 @@ import {
   ApiResponse,
   ApiParam,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
-import type { ICommandBus, IQueryBus } from '@core/application';
-import { COMMAND_BUS_TOKEN, QUERY_BUS_TOKEN } from '@core/constants';
+import type { ICommandBus, IQueryBus } from 'src/libs/core/application';
+import { COMMAND_BUS_TOKEN, QUERY_BUS_TOKEN } from 'src/libs/core/constants';
 import {
   CreateContentDto,
   UpdateContentDto,
@@ -28,6 +30,7 @@ import {
   BulkPublishContentDto,
   BulkArchiveContentDto,
   GetContentHistoryResponseDto,
+  ListContentsDto,
 } from '../../application/dtos';
 import {
   CreateContentCommand,
@@ -43,7 +46,9 @@ import {
 import {
   GetContentQuery,
   GetContentHistoryQuery,
+  ListContentsQuery,
 } from '../../application/queries';
+import { PaginatedResponseDto } from 'src/libs/shared/http/dtos/pagination.dto';
 
 /**
  * Content Controller
@@ -121,6 +126,143 @@ export class ContentController {
       id: contentId,
       message: 'Content draft created successfully',
     };
+  }
+
+  /**
+   * List contents with filtering
+   *
+   * Story 4.5: Filter Content by Category & Tags - Read Side
+   * GET /api/v1/contents
+   *
+   * Supports:
+   * - Pagination (page, limit)
+   * - Category filtering (category)
+   * - Tag filtering with AND logic (tags)
+   * - Date range filtering (dateFrom, dateTo)
+   * - Type filtering (type)
+   * - Author filtering (authorId)
+   * - Status filtering (status - admin only)
+   * - Sorting (sortBy, sortOrder)
+   */
+  @Get()
+  @ApiOperation({
+    summary: 'List contents with filtering',
+    description:
+      'Retrieves a filtered and paginated list of contents. Supports category, tags (AND logic), date range, type, author, and status filtering. Tags use AND logic: content must have ALL specified tags.',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 20, max: 100)',
+  })
+  @ApiQuery({
+    name: 'category',
+    required: false,
+    type: String,
+    description: 'Filter by category value',
+  })
+  @ApiQuery({
+    name: 'tags',
+    required: false,
+    type: [String],
+    description: 'Filter by tag slugs (AND logic)',
+  })
+  @ApiQuery({
+    name: 'dateFrom',
+    required: false,
+    type: String,
+    description: 'Filter by date from (ISO string)',
+  })
+  @ApiQuery({
+    name: 'dateTo',
+    required: false,
+    type: String,
+    description: 'Filter by date to (ISO string)',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    type: String,
+    description: 'Filter by content type',
+  })
+  @ApiQuery({
+    name: 'authorId',
+    required: false,
+    type: String,
+    description: 'Filter by author ID',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    type: [String],
+    description: 'Filter by status (admin only)',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: ['createdAt', 'updatedAt'],
+    description: 'Sort by field (default: createdAt)',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['asc', 'desc'],
+    description: 'Sort order (default: desc)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Contents list retrieved successfully',
+    schema: {
+      example: {
+        data: [
+          {
+            id: 'content-1',
+            title: 'Example Content',
+            status: 'PUBLISHED',
+            tags: ['covid', 'health'],
+          },
+        ],
+        meta: {
+          page: 1,
+          limit: 20,
+          total: 50,
+          totalPages: 3,
+          hasNextPage: true,
+          hasPreviousPage: false,
+        },
+      },
+    },
+  })
+  async listContents(
+    @Query() dto: ListContentsDto,
+    @Req() req: any,
+  ): Promise<PaginatedResponseDto<ContentResponseDto>> {
+    // Extract tenant from request (will be set by auth middleware)
+    const tenantId = req.user?.tenantId || 'mock-tenant-id';
+
+    const query = new ListContentsQuery(
+      tenantId,
+      dto.page,
+      dto.limit,
+      dto.category,
+      dto.tags,
+      dto.dateFrom,
+      dto.dateTo,
+      dto.type,
+      dto.authorId,
+      dto.status,
+      dto.sortBy,
+      dto.sortOrder,
+    );
+
+    return this.queryBus.execute(query);
   }
 
   /**
