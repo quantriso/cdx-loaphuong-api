@@ -16,12 +16,16 @@ import { TenantModule } from './modules/tenant/tenant.module';
 import { ContentModule } from './modules/content/content.module';
 import { CategoryModule } from './modules/category/category.module';
 import { TagModule } from './modules/tag/tag.module';
+import { FileModule } from './modules/file/file.module';
 
 @Global()
 @Module({
   imports: [
-    // Configuration (loads .env)
-    ConfigModule.forRoot({ isGlobal: true }),
+    // Configuration (loads .env - shared with development and test)
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     // Structured Logging with Pino
     LoggingModule,
     // Request Context with Correlation ID for distributed tracing
@@ -45,6 +49,7 @@ import { TagModule } from './modules/tag/tag.module';
     ContentModule,
     CategoryModule,
     TagModule,
+    FileModule,
   ],
 })
 export class AppModule implements NestModule {

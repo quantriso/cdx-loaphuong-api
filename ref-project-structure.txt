@@ -1,2 +1,0 @@
-D\:\\Saved\\nestjs-project-example\\src:
-app.module.ts  libs  main.ts  modules

@@ -22,11 +22,21 @@ import {
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    new FastifyAdapter({
+      logger: false,
+    }),
     {
       bufferLogs: true,
     },
   );
+
+  // Register multipart plugin for file uploads
+  await app.register(require('@fastify/multipart'), {
+    limits: {
+      fileSize: 50 * 1024 * 1024, // 50MB
+      files: 1, // Only 1 file per request
+    },
+  });
 
   // Use Pino logger for all NestJS logging
   app.useLogger(app.get(Logger));

@@ -22,12 +22,15 @@ function createPool(
   poolName: string,
   databaseService: DatabaseService,
 ): Pool {
+  const isTest =
+    process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
+
   const pool = new Pool({
     connectionString,
-    min: 5,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    min: isTest ? 2 : 5,
+    max: isTest ? 50 : 20,
+    idleTimeoutMillis: isTest ? 10000 : 30000,
+    connectionTimeoutMillis: isTest ? 5000 : 2000,
   });
 
   pool.on('error', (err) => {

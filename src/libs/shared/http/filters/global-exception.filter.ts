@@ -35,6 +35,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       return this.handleHttpException(exception, response, request);
     }
 
+    // Handle FastifyError (from Fastify framework)
+    if (
+      exception instanceof Error &&
+      'code' in exception &&
+      'statusCode' in exception
+    ) {
+      return this.handleFastifyError(exception as any, response, request);
+    }
+
     // Handle DomainException (from @core/domain - pure Error, not BaseException)
     if (exception instanceof DomainException) {
       return this.handleDomainException(exception, response, request);
@@ -117,6 +126,50 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         code: exception.code,
         message: exception.message,
         details: exception.details,
+      },
+    };
+
+    response.status(status).send(errorResponse);
+  }
+
+  private handleFastifyError(
+    exception: Error & { code?: string; statusCode?: number },
+    response: FastifyReply,
+    request: FastifyRequest,
+  ) {
+    // Map FastifyError to appropriate HTTP status
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+
+    // Handle file size exceeded error from Fastify multipart
+    if (
+      exception.message.includes('request file too large') ||
+      exception.message.includes('File too large')
+    ) {
+      status = HttpStatus.BAD_REQUEST;
+    }
+    // Handle multipart request errors (missing file, not multipart, etc.)
+    else if (
+      exception.message.includes('request is not multipart') ||
+      exception.message.includes('No file found') ||
+      exception.message.includes('file is missing')
+    ) {
+      status = HttpStatus.BAD_REQUEST;
+    }
+    // Handle other common Fastify errors
+    else if (exception.statusCode) {
+      status = exception.statusCode;
+    }
+
+    const errorResponse = {
+      success: false,
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      method: request.method,
+      error: {
+        name: exception.name,
+        code: exception.code || 'FASTIFY_ERROR',
+        message: exception.message,
       },
     };
 

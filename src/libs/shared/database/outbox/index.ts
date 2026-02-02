@@ -12,3 +12,6 @@
 export * from './outbox.repository';
 export * from './outbox-processor.service';
 export * from './outbox.module';
+
+// Export schema for database configuration
+export * from './drizzle/schema/outbox.schema';

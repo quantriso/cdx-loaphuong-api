@@ -6,11 +6,15 @@ import { BulkCreateTagsCommand } from '../bulk-create-tags.command';
 import { BulkTagsResponseDto } from '../../dtos/bulk-tags-response.dto';
 import type { ITagRepository } from '../../../domain/repositories/tag.repository.interface';
 import { TAG_REPOSITORY_TOKEN } from '../../../constants/tokens';
-import { Tag, TagCategory, TagProps } from '../../../domain/entities/tag.entity';
+import {
+  Tag,
+  TagCategory,
+  TagProps,
+} from '../../../domain/entities/tag.entity';
 import { TagId } from '../../../domain/value-objects/tag-id.value-object';
 import type { IUnitOfWork, IEventBus } from 'src/libs/core/infrastructure';
 import { DomainException } from 'src/libs/core/common';
-import { EVENT_BUS_TOKEN } from 'src/libs/shared';
+import { EVENT_BUS_TOKEN, UNIT_OF_WORK_TOKEN } from 'src/libs/shared';
 import { BulkTagsCreatedEvent } from '../../../domain/events/bulk-tags-created.event';
 
 /**
@@ -32,23 +36,22 @@ import { BulkTagsCreatedEvent } from '../../../domain/events/bulk-tags-created.e
  * - Operation continues even if some tags fail
  */
 @CommandHandler(BulkCreateTagsCommand)
-export class BulkCreateTagsHandler
-  implements ICommandHandler<BulkCreateTagsCommand, BulkTagsResponseDto>
-{
+export class BulkCreateTagsHandler implements ICommandHandler<
+  BulkCreateTagsCommand,
+  BulkTagsResponseDto
+> {
   private readonly logger = new Logger(BulkCreateTagsHandler.name);
 
   constructor(
     @Inject(TAG_REPOSITORY_TOKEN)
     private readonly tagRepository: ITagRepository,
-    @Inject('IUnitOfWork')
+    @Inject(UNIT_OF_WORK_TOKEN)
     private readonly unitOfWork: IUnitOfWork,
     @Inject(EVENT_BUS_TOKEN)
     private readonly eventBus: IEventBus,
   ) {}
 
-  async execute(
-    command: BulkCreateTagsCommand,
-  ): Promise<BulkTagsResponseDto> {
+  async execute(command: BulkCreateTagsCommand): Promise<BulkTagsResponseDto> {
     const { tags, tenantId, userId } = command;
 
     this.logger.log(
@@ -92,8 +95,8 @@ export class BulkCreateTagsHandler
 
           // Prepare tag props with defaults
           const category = tagData.category
-            ? (TagCategory[tagData.category as keyof typeof TagCategory] ||
-                TagCategory.GENERAL)
+            ? TagCategory[tagData.category as keyof typeof TagCategory] ||
+              TagCategory.GENERAL
             : TagCategory.GENERAL;
 
           const tagProps: TagProps = {
@@ -117,7 +120,9 @@ export class BulkCreateTagsHandler
 
           response.created++;
           createdTagIds.push(tag.id);
-          this.logger.debug(`Created tag "${tagData.name}" with slug "${slug}"`);
+          this.logger.debug(
+            `Created tag "${tagData.name}" with slug "${slug}"`,
+          );
         } catch (error) {
           // Step 5: Handle individual tag failures
           response.failed++;
