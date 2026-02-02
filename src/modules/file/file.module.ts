@@ -23,6 +23,7 @@ import {
   FILE_REPOSITORY_TOKEN,
   FILE_READ_DAO_TOKEN,
   FILE_RULES_CHECKER_TOKEN,
+  FILE_VALIDATION_SERVICE_TOKEN,
 } from './constants';
 
 /**
@@ -65,6 +66,10 @@ import {
 
     // File Validation Service
     FileValidationService,
+    {
+      provide: FILE_VALIDATION_SERVICE_TOKEN,
+      useExisting: FileValidationService,
+    },
 
     // =================================================================
     // Write Side (Command)
@@ -98,6 +103,7 @@ import {
     FILE_REPOSITORY_TOKEN,
     FILE_READ_DAO_TOKEN,
     FILE_RULES_CHECKER_TOKEN,
+    FILE_VALIDATION_SERVICE_TOKEN,
   ],
 })
 export class FileModule {}

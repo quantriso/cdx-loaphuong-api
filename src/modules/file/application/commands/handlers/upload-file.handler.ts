@@ -10,22 +10,29 @@ import {
   FileTypeEnum,
 } from '../../../domain/value-objects/file-type.value-object';
 import { FileDto, FileUploadResponseDto } from '../../dtos/file.dto';
+import {
+  FileValidationService,
+  FileValidationContext,
+} from '../../../domain/services/file-validation.service';
 
 /**
  * Upload File Command Handler
  *
  * Story 5.1: Upload File
+ * Story 5.2: Validate File Upload
  *
  * Business Rules:
  * - File must be valid (not empty, correct MIME type)
  * - File size must be within limits (configured in environment)
  * - Only allowed MIME types are accepted
+ * - File extension must match MIME type
+ * - File must not contain malicious content
  * - File is stored in storage service (S3, local, etc.)
  * - File metadata is saved to database
  * - FileUploadedEvent is emitted
  *
  * Implementation:
- * 1. Validate file properties (size, MIME type)
+ * 1. Validate file using FileValidationService (comprehensive validation)
  * 2. Generate unique file ID and storage key
  * 3. Store file in storage service
  * 4. Create File entity with metadata
@@ -37,78 +44,37 @@ export class UploadFileHandler implements ICommandHandler<
   UploadFileCommand,
   FileUploadResponseDto
 > {
-  private readonly MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB (sync with Fastify limit)
-  private readonly ALLOWED_MIME_TYPES = [
-    // Images
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'image/svg+xml',
-    // Documents
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    // Videos
-    'video/mp4',
-    'video/webm',
-    'video/quicktime',
-    // Audio
-    'audio/mpeg',
-    'audio/wav',
-    'audio/ogg',
-    // Archives
-    'application/zip',
-    'application/x-zip-compressed',
-    'application/x-rar-compressed',
-    'application/x-7z-compressed',
-    'application/x-tar',
-    'application/gzip',
-    // Other
-    'text/plain',
-    'text/csv',
-    'application/json',
-    'application/xml',
-  ];
-
-  private readonly ALLOWED_EXTENSIONS = {
-    image: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
-    document: ['pdf', 'doc', 'docx', 'xls', 'xlsx'],
-    video: ['mp4', 'webm', 'mov'],
-    audio: ['mp3', 'wav', 'ogg'],
-    archive: ['zip', 'rar', '7z', 'tar', 'gz'],
-  };
-
   constructor(
     @Inject(FileTokens.FILE_REPOSITORY)
     private readonly fileRepository: IFileRepository,
+    @Inject(FileTokens.FILE_VALIDATION_SERVICE)
+    private readonly fileValidationService: FileValidationService,
   ) {}
 
   async execute(command: UploadFileCommand): Promise<FileUploadResponseDto> {
-    // 1. Validate file size
-    if (command.file.size > this.MAX_FILE_SIZE) {
-      throw new BadRequestException(
-        `File size exceeds maximum limit of ${this.MAX_FILE_SIZE / 1024 / 1024}MB`,
-      );
-    }
+    // 1. Validate file using FileValidationService (comprehensive validation)
+    // Story 5.2: Validate File Upload
+    const validationContext: FileValidationContext = {
+      tenantId: command.tenantId,
+      fileName: command.file.originalname,
+      mimeType: command.file.mimetype,
+      fileSize: command.file.size,
+      fileBuffer: command.file.buffer,
+    };
 
-    // 2. Validate MIME type
-    if (!this.ALLOWED_MIME_TYPES.includes(command.file.mimetype)) {
-      throw new BadRequestException(
-        `File type ${command.file.mimetype} is not allowed`,
-      );
-    }
+    const validationOptions = {
+      maxFileSize: 50 * 1024 * 1024, // 50MB
+      checkDuplicate: false, // Don't check duplicates on initial upload
+      checkExtension: true, // Validate extension matches MIME type
+      scanForMalicious: true, // Scan for malicious content
+    };
 
-    // 3. Validate file extension
-    this.validateFileExtension(
-      command.file.mimetype,
-      command.file.originalname,
+    await this.fileValidationService.validateFile(
+      validationContext,
+      validationOptions,
     );
 
-    // 3. Generate unique file ID and storage key
+    // 2. Generate unique file ID and storage key
     const fileId = FileId.generate();
     const storagePath = this.generateStoragePath(
       command.tenantId,
@@ -116,10 +82,10 @@ export class UploadFileHandler implements ICommandHandler<
       command.file.originalname,
     );
 
-    // 4. Determine file type
+    // 3. Determine file type
     const fileType = this.determineFileType(command.file.mimetype);
 
-    // 5. Create File entity
+    // 4. Create File entity
     const file = File.createNew(
       command.tenantId,
       command.file.originalname,
@@ -131,7 +97,7 @@ export class UploadFileHandler implements ICommandHandler<
       'local',
     );
 
-    // 6. Save to repository (emits FileUploadedEvent)
+    // 5. Save to repository (emits FileUploadedEvent)
     console.log('[UPLOAD HANDLER] About to save file to repository:', {
       id: file.id,
       version: file.version,
@@ -141,7 +107,7 @@ export class UploadFileHandler implements ICommandHandler<
     await this.fileRepository.save(file);
     console.log('[UPLOAD HANDLER] File saved successfully to repository');
 
-    // 7. Return response DTO
+    // 6. Return response DTO
     return this.toUploadResponseDto(file);
   }
 
@@ -152,47 +118,6 @@ export class UploadFileHandler implements ICommandHandler<
   ): string {
     const ext = originalName.split('.').pop() || '';
     return `${tenantId}/${fileId}.${ext}`;
-  }
-
-  private validateFileExtension(mimeType: string, filename: string): void {
-    const ext = filename.split('.').pop()?.toLowerCase();
-
-    if (!ext) {
-      throw new BadRequestException('File must have an extension');
-    }
-
-    let allowedExtensions: string[] = [];
-
-    if (mimeType.startsWith('image/')) {
-      allowedExtensions = this.ALLOWED_EXTENSIONS.image;
-    } else if (mimeType.startsWith('video/')) {
-      allowedExtensions = this.ALLOWED_EXTENSIONS.video;
-    } else if (mimeType.startsWith('audio/')) {
-      allowedExtensions = this.ALLOWED_EXTENSIONS.audio;
-    } else if (
-      mimeType === 'application/pdf' ||
-      mimeType.includes('word') ||
-      mimeType.includes('document') ||
-      mimeType.includes('excel') ||
-      mimeType.includes('spreadsheet')
-    ) {
-      allowedExtensions = this.ALLOWED_EXTENSIONS.document;
-    } else if (
-      mimeType === 'application/zip' ||
-      mimeType === 'application/x-zip-compressed' ||
-      mimeType === 'application/x-rar-compressed' ||
-      mimeType === 'application/x-7z-compressed' ||
-      mimeType === 'application/x-tar' ||
-      mimeType === 'application/gzip'
-    ) {
-      allowedExtensions = this.ALLOWED_EXTENSIONS.archive;
-    }
-
-    if (allowedExtensions.length > 0 && !allowedExtensions.includes(ext)) {
-      throw new BadRequestException(
-        `File extension .${ext} is not allowed for ${mimeType} files`,
-      );
-    }
   }
 
   private determineFileType(mimeType: string): FileType {
