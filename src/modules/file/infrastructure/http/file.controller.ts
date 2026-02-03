@@ -179,10 +179,11 @@ export class FileController {
     @Req() req: any,
   ) {
     const tenantId = req.user?.tenantId || 'mock-tenant-id';
+    const processedBy = req.user?.id || 'mock-user-id';
 
     const command = new ProcessFileCommand(
       fileId,
-      tenantId,
+      processedBy,
       tenantId,
       dto.options,
     );

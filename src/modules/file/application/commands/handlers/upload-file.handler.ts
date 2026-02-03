@@ -3,6 +3,7 @@ import { CommandHandler } from '@nestjs/cqrs';
 import { ICommandHandler } from '@core/application';
 import { UploadFileCommand } from '../upload-file.command';
 import type { IFileRepository } from '../../../domain/repositories/file.repository.interface';
+import type { IStorageService } from '../../../infrastructure/services/storage.interface';
 import { FileTokens } from '../../../constants';
 import { File, FileId } from '../../../domain';
 import {
@@ -49,6 +50,8 @@ export class UploadFileHandler implements ICommandHandler<
     private readonly fileRepository: IFileRepository,
     @Inject(FileTokens.FILE_VALIDATION_SERVICE)
     private readonly fileValidationService: FileValidationService,
+    @Inject(FileTokens.FILE_STORAGE)
+    private readonly storageService: IStorageService,
   ) {}
 
   async execute(command: UploadFileCommand): Promise<FileUploadResponseDto> {
@@ -74,18 +77,23 @@ export class UploadFileHandler implements ICommandHandler<
       validationOptions,
     );
 
-    // 2. Generate unique file ID and storage key
+    // 2. Generate unique file ID
     const fileId = FileId.generate();
-    const storagePath = this.generateStoragePath(
-      command.tenantId,
-      fileId.value,
-      command.file.originalname,
-    );
+    const ext = command.file.originalname.split('.').pop() || '';
 
     // 3. Determine file type
     const fileType = this.determineFileType(command.file.mimetype);
 
-    // 4. Create File entity
+    // 4. Save file to storage
+    const fileName = `${fileId.value}.${ext}`;
+    const storagePath = await this.storageService.saveFile(
+      command.tenantId,
+      command.file.buffer,
+      fileName,
+    );
+    console.log('[UPLOAD HANDLER] File saved to storage:', storagePath);
+
+    // 5. Create File entity
     const file = File.createNew(
       command.tenantId,
       command.file.originalname,
@@ -97,17 +105,18 @@ export class UploadFileHandler implements ICommandHandler<
       'local',
     );
 
-    // 5. Save to repository (emits FileUploadedEvent)
+    // 6. Save to repository (emits FileUploadedEvent)
     console.log('[UPLOAD HANDLER] About to save file to repository:', {
       id: file.id,
       version: file.version,
       tenantId: file.tenantId,
       originalFileName: file.originalFileName,
+      storagePath: file.storagePath,
     });
     await this.fileRepository.save(file);
     console.log('[UPLOAD HANDLER] File saved successfully to repository');
 
-    // 6. Return response DTO
+    // 7. Return response DTO
     return this.toUploadResponseDto(file);
   }
 

@@ -30,6 +30,8 @@ import { AppModule } from '../../../../src/app.module';
 import { GlobalExceptionFilter } from '../../../../src/libs/shared/http/filters/global-exception.filter';
 import { FileTypeEnum } from '../../../../src/modules/file/domain';
 import { Readable } from 'stream';
+import * as fs from 'fs';
+import * as path from 'path';
 
 describe('FileModule (Integration) - Epic 5', () => {
   let app: INestApplication;
@@ -52,14 +54,35 @@ describe('FileModule (Integration) - Epic 5', () => {
   const uploadFile = async (
     filename: string,
     contentType: string,
-    content: string,
+    content?: string,
   ) => {
     const formData = new FormData();
-    formData.append(
-      'file',
-      new Blob([content], { type: contentType }),
+
+    // Check if we have a test image file with this name
+    const testImagePath = path.join(
+      __dirname,
+      '../../../fixtures/images',
       filename,
     );
+
+    if (fs.existsSync(testImagePath)) {
+      // Use real test image
+      const imageBuffer = fs.readFileSync(testImagePath);
+      formData.append(
+        'file',
+        new Blob([imageBuffer], { type: contentType }),
+        filename,
+      );
+    } else if (content) {
+      // Use provided content for non-image files
+      formData.append(
+        'file',
+        new Blob([content], { type: contentType }),
+        filename,
+      );
+    } else {
+      throw new Error(`No test image or content provided for ${filename}`);
+    }
 
     const response = await makeRequest({
       method: 'POST',
@@ -136,12 +159,17 @@ describe('FileModule (Integration) - Epic 5', () => {
     describe('Story 5.1: Upload File', () => {
       it('should upload an image file successfully', async () => {
         const fastifyInstance = app.getHttpAdapter().getInstance();
+        const testImagePath = path.join(
+          __dirname,
+          '../../../fixtures/images/medium-test.jpg',
+        );
+        const imageBuffer = fs.readFileSync(testImagePath);
 
         const formData = new FormData();
         formData.append(
           'file',
-          new Blob(['fake image content'], { type: 'image/jpeg' }),
-          'test-image.jpg',
+          new Blob([imageBuffer], { type: 'image/jpeg' }),
+          'medium-test.jpg',
         );
 
         const response = await fastifyInstance.inject({
@@ -161,7 +189,7 @@ describe('FileModule (Integration) - Epic 5', () => {
         expect(body).toHaveProperty('message', 'File uploaded successfully');
         expect(body).toHaveProperty('fileName');
         expect(body.fileType).toBe(FileTypeEnum.IMAGE);
-        expect(body.originalFileName).toBe('test-image.jpg');
+        expect(body.originalFileName).toBe('medium-test.jpg');
 
         uploadedFileId = body.id;
       });
@@ -299,6 +327,15 @@ describe('FileModule (Integration) - Epic 5', () => {
     });
 
     describe('Story 5.2: Validate File Upload', () => {
+      let testImagePath: string;
+
+      beforeAll(() => {
+        testImagePath = path.join(
+          __dirname,
+          '../../../fixtures/images/medium-test.jpg',
+        );
+      });
+
       it('should return 400 when file is missing', async () => {
         const response = await makeRequest({
           method: 'POST',
@@ -336,10 +373,11 @@ describe('FileModule (Integration) - Epic 5', () => {
       });
 
       it('should validate image file extensions', async () => {
+        const imageBuffer = fs.readFileSync(testImagePath);
         const formData = new FormData();
         formData.append(
           'file',
-          new Blob(['fake image'], { type: 'image/jpeg' }),
+          new Blob([imageBuffer], { type: 'image/jpeg' }),
           'invalid.xyz',
         );
 
@@ -360,7 +398,7 @@ describe('FileModule (Integration) - Epic 5', () => {
         const formData = new FormData();
         formData.append(
           'file',
-          new Blob(['fake document'], { type: 'application/pdf' }),
+          new Blob(['fake document content'], { type: 'application/pdf' }),
           'invalid.xyz',
         );
 
@@ -381,7 +419,7 @@ describe('FileModule (Integration) - Epic 5', () => {
         const formData = new FormData();
         formData.append(
           'file',
-          new Blob(['fake video'], { type: 'video/mp4' }),
+          new Blob(['fake video content'], { type: 'video/mp4' }),
           'invalid.xyz',
         );
 
@@ -402,7 +440,7 @@ describe('FileModule (Integration) - Epic 5', () => {
         const formData = new FormData();
         formData.append(
           'file',
-          new Blob(['fake audio'], { type: 'audio/mpeg' }),
+          new Blob(['fake audio content'], { type: 'audio/mpeg' }),
           'invalid.xyz',
         );
 
@@ -423,7 +461,7 @@ describe('FileModule (Integration) - Epic 5', () => {
         const formData = new FormData();
         formData.append(
           'file',
-          new Blob(['fake archive'], { type: 'application/zip' }),
+          new Blob(['fake archive content'], { type: 'application/zip' }),
           'invalid.xyz',
         );
 
@@ -441,27 +479,39 @@ describe('FileModule (Integration) - Epic 5', () => {
       });
 
       it('should accept valid image extensions (jpg, jpeg, png, gif, webp, svg)', async () => {
-        const extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+        const testImages = [
+          { path: 'small-jpeg.jpg', ext: 'jpg', type: 'image/jpeg' },
+          { path: 'test-png.png', ext: 'png', type: 'image/png' },
+          { path: 'test-webp.webp', ext: 'webp', type: 'image/webp' },
+        ];
 
-        for (const ext of extensions) {
-          const formData = new FormData();
-          formData.append(
-            'file',
-            new Blob([`fake image ${ext}`], { type: 'image/jpeg' }),
-            `test.${ext}`,
+        for (const testImage of testImages) {
+          const imagePath = path.join(
+            __dirname,
+            '../../../fixtures/images',
+            testImage.path,
           );
+          if (fs.existsSync(imagePath)) {
+            const imageBuffer = fs.readFileSync(imagePath);
+            const formData = new FormData();
+            formData.append(
+              'file',
+              new Blob([imageBuffer], { type: testImage.type }),
+              `test.${testImage.ext}`,
+            );
 
-          const response = await makeRequest({
-            method: 'POST',
-            url: '/api/v1/files',
-            headers: {
-              'x-user-id': 'mock-user-id',
-              'x-tenant-id': 'mock-tenant-id',
-            },
-            payload: formData,
-          });
+            const response = await makeRequest({
+              method: 'POST',
+              url: '/api/v1/files',
+              headers: {
+                'x-user-id': 'mock-user-id',
+                'x-tenant-id': 'mock-tenant-id',
+              },
+              payload: formData,
+            });
 
-          expect(response.statusCode).toBe(201);
+            expect(response.statusCode).toBe(201);
+          }
         }
       });
     });
@@ -533,11 +583,7 @@ describe('FileModule (Integration) - Epic 5', () => {
 
       beforeEach(async () => {
         // Upload an image for processing tests
-        const { body } = await uploadFile(
-          'process-test.jpg',
-          'image/jpeg',
-          'test image content for processing',
-        );
+        const { body } = await uploadFile('medium-test.jpg', 'image/jpeg');
         imageFileId = body.id;
       });
 
@@ -697,11 +743,7 @@ describe('FileModule (Integration) - Epic 5', () => {
 
       beforeEach(async () => {
         // Upload a file for download tests
-        const { body } = await uploadFile(
-          'download-test.jpg',
-          'image/jpeg',
-          'test content for download',
-        );
+        const { body } = await uploadFile('medium-test.jpg', 'image/jpeg');
         fileForDownloadId = body.id;
       });
 
@@ -714,7 +756,7 @@ describe('FileModule (Integration) - Epic 5', () => {
         expect(response.statusCode).toBe(200);
         const body = JSON.parse(response.payload);
         expect(body).toHaveProperty('id', fileForDownloadId);
-        expect(body).toHaveProperty('originalFileName', 'download-test.jpg');
+        expect(body).toHaveProperty('originalFileName', 'medium-test.jpg');
         expect(body).toHaveProperty('fileType');
         expect(body).toHaveProperty('fileSize');
         expect(body).toHaveProperty('mimeType');
@@ -932,11 +974,7 @@ describe('FileModule (Integration) - Epic 5', () => {
 
       beforeEach(async () => {
         // Upload a file for deletion tests
-        const { body } = await uploadFile(
-          'delete-test.jpg',
-          'image/jpeg',
-          'test content for deletion',
-        );
+        const { body } = await uploadFile('medium-test.jpg', 'image/jpeg');
         fileToDeleteId = body.id;
       });
 

@@ -14,6 +14,8 @@ import { FileReadDao } from './infrastructure/persistence/read';
 
 // Infrastructure - Services
 import { FileRulesCheckerService } from './infrastructure/services';
+import { ImageProcessingService } from './infrastructure/services/image-processing.service';
+import { LocalStorageProvider } from './infrastructure/services/local-storage.provider';
 
 // Domain - Services
 import { FileValidationService } from './domain/services';
@@ -24,6 +26,7 @@ import {
   FILE_READ_DAO_TOKEN,
   FILE_RULES_CHECKER_TOKEN,
   FILE_VALIDATION_SERVICE_TOKEN,
+  FILE_STORAGE_TOKEN,
 } from './constants';
 
 /**
@@ -58,6 +61,16 @@ import {
     {
       provide: FILE_RULES_CHECKER_TOKEN,
       useExisting: FileRulesCheckerService,
+    },
+
+    // Image Processing Service (Story 5.3: Process Uploaded Images)
+    ImageProcessingService,
+
+    // Storage Service (Local Filesystem)
+    LocalStorageProvider,
+    {
+      provide: FILE_STORAGE_TOKEN,
+      useExisting: LocalStorageProvider,
     },
 
     // =================================================================
@@ -104,6 +117,7 @@ import {
     FILE_READ_DAO_TOKEN,
     FILE_RULES_CHECKER_TOKEN,
     FILE_VALIDATION_SERVICE_TOKEN,
+    FILE_STORAGE_TOKEN,
   ],
 })
 export class FileModule {}

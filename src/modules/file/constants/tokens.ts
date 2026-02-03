@@ -12,5 +12,6 @@ export const FileTokens = {
 export const FILE_REPOSITORY_TOKEN = FileTokens.FILE_REPOSITORY;
 export const FILE_READ_DAO_TOKEN = FileTokens.FILE_READ_DAO;
 export const FILE_SERVICE_TOKEN = FileTokens.FILE_SERVICE;
+export const FILE_STORAGE_TOKEN = FileTokens.FILE_STORAGE;
 export const FILE_RULES_CHECKER_TOKEN = FileTokens.FILE_RULES_CHECKER;
 export const FILE_VALIDATION_SERVICE_TOKEN = FileTokens.FILE_VALIDATION_SERVICE;

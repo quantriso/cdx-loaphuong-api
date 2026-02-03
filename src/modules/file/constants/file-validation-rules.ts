@@ -31,6 +31,9 @@ export const ALLOWED_DOCUMENT_MIME_TYPES = [
   'text/plain',
   'text/html',
   'application/x-httpd-php',
+  'application/zip',
+  'application/x-rar-compressed',
+  'application/x-7z-compressed',
 ] as const;
 
 /**
@@ -105,6 +108,15 @@ export const FILE_VALIDATION_RULES = {
     mov: 'video/quicktime',
     avi: 'video/x-msvideo',
     wmv: 'video/x-ms-wmv',
+    // Audio
+    mp3: 'audio/mpeg',
+    wav: 'audio/wav',
+    ogg: 'audio/ogg',
+    m4a: 'audio/m4a',
+    // Archives
+    zip: 'application/zip',
+    rar: 'application/x-rar-compressed',
+    '7z': 'application/x-7z-compressed',
   },
   MIME_TYPE_TO_EXTENSION: {
     'image/jpeg': ['jpg', 'jpeg'],
@@ -133,6 +145,14 @@ export const FILE_VALIDATION_RULES = {
     'video/quicktime': ['mov'],
     'video/x-msvideo': ['avi'],
     'video/x-ms-wmv': ['wmv'],
+    'audio/mpeg': ['mp3'],
+    'audio/wav': ['wav'],
+    'audio/ogg': ['ogg'],
+    'audio/m4a': ['m4a'],
+    'audio/mp3': ['mp3'],
+    'application/zip': ['zip'],
+    'application/x-rar-compressed': ['rar'],
+    'application/x-7z-compressed': ['7z'],
   },
 };
 
@@ -239,6 +259,17 @@ export const EXTENSION_TO_MIME_TYPE: Record<string, string> = {
   '.mov': 'video/quicktime',
   '.avi': 'video/x-msvideo',
   '.wmv': 'video/x-ms-wmv',
+
+  // Audio
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
+  '.m4a': 'audio/m4a',
+
+  // Archives
+  '.zip': 'application/zip',
+  '.rar': 'application/x-rar-compressed',
+  '.7z': 'application/x-7z-compressed',
 };
 
 /**
@@ -296,6 +327,25 @@ export function isAllowedMimeType(mimeType: string): boolean {
 export function isDisallowedExtension(extension: string): boolean {
   return DISALLOWED_EXTENSIONS.includes(extension.toLowerCase() as any);
 }
+
+/**
+ * Image processing configuration
+ * Story 5.3: Process Uploaded Images
+ */
+export const IMAGE_PROCESSING_CONFIG = {
+  DEFAULT_WIDTH: 2000, // Max width 2000px (maintaining aspect ratio)
+  DEFAULT_HEIGHT: 2000, // Max height 2000px
+  THUMBNAIL_WIDTH: 300, // Thumbnail at 300x300px
+  THUMBNAIL_HEIGHT: 300,
+  DEFAULT_QUALITY: 80, // Compress to 80% quality
+  THUMBNAIL_QUALITY: 75, // Thumbnail quality 75%
+  DEFAULT_FORMAT: 'webp' as const, // Convert to WebP format
+  PROCESSING_TIMEOUT: 10000, // Timeout after 10 seconds
+  MAX_RETRIES: 1, // Retry once on failure
+  RETRY_DELAY_MS: 1000,
+  MAX_PROCESSED_SIZE: 10 * 1024 * 1024, // 10MB maximum processed file size
+  PERFORMANCE_ALERT_THRESHOLD: 5000, // Alert if processing exceeds 5 seconds
+} as const;
 
 /**
  * Get expected MIME type from file extension

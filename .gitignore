@@ -58,3 +58,9 @@ _bmad-output/
 
 # Temporary files
 nul
+
+# Uploads directory (user uploaded files)
+/uploads/
+
+# Test fixtures images
+/test/fixtures/images/

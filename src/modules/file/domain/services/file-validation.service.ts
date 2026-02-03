@@ -318,10 +318,9 @@ export class FileValidationService {
 
     // Get expected extensions for this MIME type
     const expectedExtensions =
-      FILE_VALIDATION_RULES.MIME_TYPE_TO_EXTENSION[mimeType] ||
-      FILE_VALIDATION_RULES.EXTENSION_TO_MIME_TYPE[extension];
+      FILE_VALIDATION_RULES.MIME_TYPE_TO_EXTENSION[mimeType];
 
-    // If we have a mapping, check if the extension matches
+    // If MIME type has a mapping, check if the extension matches
     if (expectedExtensions) {
       // If mimeType is mapped to extensions, check if current extension is in the list
       const allowedExtensions = Array.isArray(expectedExtensions)
@@ -329,6 +328,13 @@ export class FileValidationService {
         : [expectedExtensions];
 
       if (!allowedExtensions.includes(extension)) {
+        throw new FileExtensionMismatchException(fileName, extension, mimeType);
+      }
+    } else {
+      // If extension has a mapping but MIME type doesn't match, throw error
+      const expectedMimeType =
+        FILE_VALIDATION_RULES.EXTENSION_TO_MIME_TYPE[extension];
+      if (expectedMimeType && expectedMimeType !== mimeType) {
         throw new FileExtensionMismatchException(fileName, extension, mimeType);
       }
     }
@@ -362,12 +368,26 @@ export class FileValidationService {
       throw new MaliciousFileException(fileName, 'embedded script detected');
     }
 
-    // Check for null bytes (potential binary injection)
-    if (fileBuffer.includes(Buffer.from([0x00]))) {
-      throw new MaliciousFileException(
-        fileName,
-        'null byte detected (binary injection)',
-      );
+    // Check for null bytes only in text-based files (not binary images/videos/documents)
+    // Null bytes are normal in binary files like JPEG, PNG, PDF, etc.
+    const extension = this.extractExtension(fileName);
+    const textFileExtensions = [
+      'txt',
+      'html',
+      'htm',
+      'xml',
+      'json',
+      'csv',
+      'log',
+    ];
+
+    if (extension && textFileExtensions.includes(extension)) {
+      if (fileBuffer.includes(Buffer.from([0x00]))) {
+        throw new MaliciousFileException(
+          fileName,
+          'null byte detected (binary injection)',
+        );
+      }
     }
   }
 
