@@ -29,12 +29,14 @@ import {
   ProcessFileCommand,
   DeleteFileCommand,
   DownloadFileCommand,
+  GetDownloadUrlCommand,
 } from '../../application/commands';
 import { GetFileQuery, GetFileListQuery } from '../../application/queries';
 import {
   FileDto,
   FileUploadResponseDto,
   FileSearchDto,
+  DownloadUrlResponseDto,
 } from '../../application/dtos/file.dto';
 
 /**
@@ -260,6 +262,56 @@ export class FileController {
       sortOrder,
     );
     return this.queryBus.execute(query);
+  }
+
+  /**
+   * Get Download URL
+   *
+   * Story 5.4: Download File
+   *
+   * Generates a presigned URL for downloading a file.
+   * Supports different versions: original, processed, thumbnail.
+   * URL expires after 1 hour.
+   */
+  @Post(':id/download-url')
+  @ApiOperation({ summary: 'Get a presigned download URL' })
+  @ApiQuery({
+    name: 'version',
+    required: false,
+    enum: ['original', 'processed', 'thumbnail'],
+    example: 'original',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Download URL generated successfully',
+    type: DownloadUrlResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'File not found',
+  })
+  @HttpCode(HttpStatus.OK)
+  async getDownloadUrl(
+    @Param('id') fileId: string,
+    @Query('version') version: string = 'original',
+    @Req() req: any,
+  ) {
+    const tenantId = req.user?.tenantId || 'mock-tenant-id';
+    const userId = req.user?.id || 'mock-user-id';
+    const ipAddress = req.ip || req.connection?.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    const contentId = req.body?.contentId;
+
+    const command = new GetDownloadUrlCommand(
+      fileId,
+      tenantId,
+      version as 'original' | 'processed' | 'thumbnail',
+      userId,
+      contentId,
+      ipAddress,
+      userAgent,
+    );
+    return this.commandBus.execute(command);
   }
 
   /**

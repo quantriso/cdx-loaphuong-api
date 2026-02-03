@@ -90,8 +90,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     response: FastifyReply,
     request: FastifyRequest,
   ) {
-    // DomainException maps to 400 Bad Request
-    const status = HttpStatus.BAD_REQUEST;
+    // Map specific domain exception codes to appropriate HTTP status codes
+    let status = HttpStatus.BAD_REQUEST;
+
+    if (exception.code === 'FILE_NOT_FOUND') {
+      status = HttpStatus.NOT_FOUND;
+    }
+
     const errorResponse = {
       success: false,
       statusCode: status,

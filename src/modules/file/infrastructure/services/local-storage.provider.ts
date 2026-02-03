@@ -135,6 +135,45 @@ export class LocalStorageProvider implements IStorageService {
   }
 
   /**
+   * Generate a presigned URL for downloading a file
+   *
+   * Note: For local storage, this returns a simple file URL.
+   * In production with MinIO/S3, this would generate a proper presigned URL with expiration.
+   *
+   * @param storagePath - Storage path/key of the file
+   * @param expiresIn - Expiration time in seconds (not used in local storage)
+   * @returns File URL
+   */
+  async generatePresignedUrl(
+    storagePath: string,
+    expiresIn: number = 900,
+  ): Promise<string> {
+    try {
+      // Check if file exists
+      const exists = await this.fileExists(storagePath);
+      if (!exists) {
+        throw new Error(`File not found: ${storagePath}`);
+      }
+
+      // For local storage, return a simple URL
+      // In production with MinIO, this would generate a presigned URL with signature
+      // URL format: http://localhost:3000/files/download?path=<storagePath>
+      const baseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+      const downloadUrl = `${baseUrl}/files/download?path=${encodeURIComponent(storagePath)}`;
+
+      this.logger.debug(`Generated download URL for ${storagePath}`);
+
+      return downloadUrl;
+    } catch (error) {
+      this.logger.error(
+        `Failed to generate presigned URL for ${storagePath}`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  /**
    * Ensure base directory exists
    */
   private async ensureBaseDirectory(): Promise<void> {

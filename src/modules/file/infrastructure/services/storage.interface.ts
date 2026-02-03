@@ -34,4 +34,15 @@ export interface IStorageService {
    * @returns True if file exists
    */
   fileExists(storagePath: string): Promise<boolean>;
+
+  /**
+   * Generate a presigned URL for downloading a file
+   * @param storagePath - Storage path/key of the file
+   * @param expiresIn - Expiration time in seconds (default: 900 = 15 minutes)
+   * @returns Presigned URL string
+   */
+  generatePresignedUrl(
+    storagePath: string,
+    expiresIn?: number,
+  ): Promise<string>;
 }

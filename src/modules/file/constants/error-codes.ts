@@ -13,6 +13,7 @@ export const FILE_VALIDATION_ERROR_CODES = {
   EMPTY_FILE: 'EMPTY_FILE',
   MIME_TYPE_INVALID: 'MIME_TYPE_INVALID',
   FILE_CORRUPTED: 'FILE_CORRUPTED',
+  FILE_NOT_FOUND: 'FILE_NOT_FOUND',
 } as const;
 
 export type FileValidationErrorCode =
@@ -33,4 +34,5 @@ export const FILE_VALIDATION_ERROR_MESSAGES: Record<
   EMPTY_FILE: 'File trống',
   MIME_TYPE_INVALID: 'Loại MIME không hợp lệ',
   FILE_CORRUPTED: 'File bị lỗi',
+  FILE_NOT_FOUND: 'File không tồn tại hoặc đã bị xóa',
 };

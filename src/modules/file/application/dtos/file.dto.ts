@@ -59,6 +59,22 @@ export class FileDownloadDto {
   version: 'original' | 'processed' | 'thumbnail';
 }
 
+export class GetDownloadUrlDto {
+  fileId: string;
+  tenantId: string;
+  version?: 'original' | 'processed' | 'thumbnail';
+  userId?: string;
+  contentId?: string;
+}
+
+export class DownloadUrlResponseDto {
+  downloadUrl: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  expiresAt: Date;
+}
+
 export class FileProcessDto {
   fileId: string;
   tenantId: string;

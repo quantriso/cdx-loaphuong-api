@@ -968,6 +968,194 @@ describe('FileModule (Integration) - Epic 5', () => {
     });
   });
 
+  describe('POST /api/v1/files/:id/download-url', () => {
+    describe('Story 5.4: Download File - Get Download URL', () => {
+      let fileForDownloadUrlId: string;
+      let processedFileId: string;
+
+      beforeEach(async () => {
+        // Upload a file for download URL tests
+        const { body } = await uploadFile('medium-test.jpg', 'image/jpeg');
+        fileForDownloadUrlId = body.id;
+
+        // Upload and process another file for version tests (using medium-test.jpg)
+        const { body: processedBody } = await uploadFile(
+          'medium-test.jpg',
+          'image/jpeg',
+        );
+        processedFileId = processedBody.id;
+
+        // Process the file
+        await makeRequest({
+          method: 'POST',
+          url: `/api/v1/files/${processedFileId}/process`,
+          body: {},
+        });
+      });
+
+      it('should generate download URL for original version', async () => {
+        const response = await makeRequest({
+          method: 'POST',
+          url: `/api/v1/files/${fileForDownloadUrlId}/download-url`,
+          headers: {
+            'x-user-id': 'mock-user-id',
+            'x-tenant-id': 'mock-tenant-id',
+          },
+        });
+
+        expect(response.statusCode).toBe(200);
+        const body = JSON.parse(response.payload);
+        expect(body).toHaveProperty('downloadUrl');
+        expect(body).toHaveProperty('fileName', 'medium-test.jpg');
+        expect(body).toHaveProperty('mimeType', 'image/jpeg');
+        expect(body).toHaveProperty('fileSize');
+        expect(body).toHaveProperty('expiresAt');
+        expect(typeof body.downloadUrl).toBe('string');
+        expect(body.downloadUrl.length).toBeGreaterThan(0);
+      });
+
+      it('should generate download URL for processed version', async () => {
+        const response = await makeRequest({
+          method: 'POST',
+          url: `/api/v1/files/${processedFileId}/download-url?version=processed`,
+          headers: {
+            'x-user-id': 'mock-user-id',
+            'x-tenant-id': 'mock-tenant-id',
+          },
+        });
+
+        expect(response.statusCode).toBe(200);
+        const body = JSON.parse(response.payload);
+        expect(body).toHaveProperty('downloadUrl');
+        expect(body).toHaveProperty('fileName');
+        expect(body.fileName).toContain('medium-test');
+        expect(body).toHaveProperty('expiresAt');
+      });
+
+      it('should generate download URL for thumbnail version', async () => {
+        const response = await makeRequest({
+          method: 'POST',
+          url: `/api/v1/files/${processedFileId}/download-url?version=thumbnail`,
+          headers: {
+            'x-user-id': 'mock-user-id',
+            'x-tenant-id': 'mock-tenant-id',
+          },
+        });
+
+        expect(response.statusCode).toBe(200);
+        const body = JSON.parse(response.payload);
+        expect(body).toHaveProperty('downloadUrl');
+        expect(body).toHaveProperty('fileName');
+        expect(body.fileName).toContain('thumbnail');
+        expect(body).toHaveProperty('expiresAt');
+      });
+
+      it('should return 404 for non-existent file', async () => {
+        const response = await makeRequest({
+          method: 'POST',
+          url: '/api/v1/files/non-existent-id/download-url',
+          headers: {
+            'x-user-id': 'mock-user-id',
+            'x-tenant-id': 'mock-tenant-id',
+          },
+        });
+
+        expect(response.statusCode).toBe(404);
+      });
+
+      it('should fallback to original when processed version not available', async () => {
+        const response = await makeRequest({
+          method: 'POST',
+          url: `/api/v1/files/${fileForDownloadUrlId}/download-url?version=processed`,
+          headers: {
+            'x-user-id': 'mock-user-id',
+            'x-tenant-id': 'mock-tenant-id',
+          },
+        });
+
+        expect(response.statusCode).toBe(200);
+        const body = JSON.parse(response.payload);
+        expect(body).toHaveProperty('downloadUrl');
+        expect(body).toHaveProperty('fileName', 'medium-test.jpg');
+      });
+
+      it('should fallback to original when thumbnail not available', async () => {
+        const response = await makeRequest({
+          method: 'POST',
+          url: `/api/v1/files/${fileForDownloadUrlId}/download-url?version=thumbnail`,
+          headers: {
+            'x-user-id': 'mock-user-id',
+            'x-tenant-id': 'mock-tenant-id',
+          },
+        });
+
+        expect(response.statusCode).toBe(200);
+        const body = JSON.parse(response.payload);
+        expect(body).toHaveProperty('downloadUrl');
+        expect(body).toHaveProperty('fileName', 'medium-test.jpg');
+      });
+
+      it('should set expiration time approximately 15 minutes in future', async () => {
+        const response = await makeRequest({
+          method: 'POST',
+          url: `/api/v1/files/${fileForDownloadUrlId}/download-url`,
+          headers: {
+            'x-user-id': 'mock-user-id',
+            'x-tenant-id': 'mock-tenant-id',
+          },
+        });
+
+        expect(response.statusCode).toBe(200);
+        const body = JSON.parse(response.payload);
+        const expiresAt = new Date(body.expiresAt);
+        const now = new Date();
+        const diffInMinutes =
+          (expiresAt.getTime() - now.getTime()) / (1000 * 60);
+
+        expect(diffInMinutes).toBeGreaterThan(14.9); // Close to 15 minutes
+        expect(diffInMinutes).toBeLessThan(15.1);
+      });
+
+      it('should include file metadata in response', async () => {
+        const response = await makeRequest({
+          method: 'POST',
+          url: `/api/v1/files/${fileForDownloadUrlId}/download-url`,
+          headers: {
+            'x-user-id': 'mock-user-id',
+            'x-tenant-id': 'mock-tenant-id',
+          },
+        });
+
+        expect(response.statusCode).toBe(200);
+        const body = JSON.parse(response.payload);
+        expect(body).toHaveProperty('downloadUrl');
+        expect(body).toHaveProperty('fileName');
+        expect(body).toHaveProperty('mimeType');
+        expect(body).toHaveProperty('fileSize');
+        expect(body).toHaveProperty('expiresAt');
+        expect(typeof body.fileSize).toBe('number');
+      });
+
+      it('should handle contentId in request body', async () => {
+        const response = await makeRequest({
+          method: 'POST',
+          url: `/api/v1/files/${fileForDownloadUrlId}/download-url`,
+          headers: {
+            'x-user-id': 'mock-user-id',
+            'x-tenant-id': 'mock-tenant-id',
+          },
+          body: {
+            contentId: 'content-123',
+          },
+        });
+
+        expect(response.statusCode).toBe(200);
+        const body = JSON.parse(response.payload);
+        expect(body).toHaveProperty('downloadUrl');
+      });
+    });
+  });
+
   describe('DELETE /api/v1/files/:id', () => {
     describe('Story 5.5: Delete File', () => {
       let fileToDeleteId: string;
