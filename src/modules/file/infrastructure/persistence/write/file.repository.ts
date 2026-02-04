@@ -362,7 +362,7 @@ export class FileRepository
       thumbnailPath: aggregate.thumbnailPath || null,
       processedMetadata: aggregate.processedMetadata || null,
       uploadedBy: aggregate.uploadedBy,
-      isDeleted: aggregate.isDeletedFlag,
+      isDeleted: aggregate.isDeleted,
       deletedAt: aggregate.deletedAt || null,
       deletedBy: aggregate.deletedBy || null,
       version: aggregate.version,

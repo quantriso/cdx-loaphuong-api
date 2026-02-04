@@ -1,0 +1,108 @@
+import { Module } from '@nestjs/common';
+import { SharedCqrsModule, SharedModule } from '@shared';
+import { ContentModule } from '../content/content.module';
+import {
+  COMMENT_REPOSITORY_TOKEN,
+  COMMENT_READ_DAO_TOKEN,
+  COMMENT_VALIDATION_SERVICE_TOKEN,
+  CONTENT_SERVICE_TOKEN,
+} from './constants';
+
+// Domain
+import { CommentRepository } from './infrastructure/persistence/write/comment.repository';
+import type { CommentRepositoryInterface } from './domain/repositories/comment.repository.interface';
+
+// Application - Commands
+import { CreateCommentHandler } from './application/commands/handlers/create-comment.handler';
+
+// Application - Queries
+import { GetCommentsHandler } from './application/queries/handlers/get-comments.handler';
+import { GetCommentByIdHandler } from './application/queries/handlers/get-comment-by-id.handler';
+
+// Domain Services
+import { CommentValidationService } from './domain/services/comment-validation.service';
+import { ContentService } from './domain/services/content.service';
+
+// Infrastructure - HTTP
+import { CommentController } from './infrastructure/http/comment.controller';
+
+// Infrastructure - Persistence - Read (CQRS)
+import { CommentReadDao } from './infrastructure/persistence/read/comment-read-dao';
+
+// Infrastructure - Schema
+import * as commentSchema from './infrastructure/persistence/drizzle/schema/comment.schema';
+
+/**
+ * Comment Module
+ *
+ * Story 6.1: Add comments on published content
+ *
+ * This module provides functionality for:
+ * - Creating comments on published content
+ * - Retrieving comments for content
+ * - Supporting nested comments (replies)
+ * - User mentions in comments
+ * - Comment moderation
+ *
+ * Architecture:
+ * - Domain: Entity, value objects, domain services, events
+ * - Application: Commands, queries, handlers, DTOs
+ * - Infrastructure: Repository, controller, Drizzle schema
+ */
+@Module({
+  imports: [SharedCqrsModule, SharedModule, ContentModule],
+  controllers: [CommentController],
+  providers: [
+    // Repository (Write side - CQRS)
+    {
+      provide: COMMENT_REPOSITORY_TOKEN,
+      useFactory: (db) => {
+        return new CommentRepository(db);
+      },
+      inject: ['DatabaseProvider'],
+    },
+    {
+      provide: 'CommentRepositoryInterface',
+      useExisting: COMMENT_REPOSITORY_TOKEN,
+    },
+
+    // Read DAO (Query side - CQRS)
+    {
+      provide: COMMENT_READ_DAO_TOKEN,
+      useFactory: (db) => {
+        return new CommentReadDao(db);
+      },
+      inject: ['DatabaseProvider'],
+    },
+
+    // Domain Services
+    {
+      provide: COMMENT_VALIDATION_SERVICE_TOKEN,
+      useClass: CommentValidationService,
+    },
+    {
+      provide: CONTENT_SERVICE_TOKEN,
+      useClass: ContentService,
+    },
+
+    // Command Handlers
+    CreateCommentHandler,
+
+    // Query Handlers
+    GetCommentsHandler,
+    GetCommentByIdHandler,
+  ],
+  exports: [
+    COMMENT_REPOSITORY_TOKEN,
+    COMMENT_READ_DAO_TOKEN,
+    COMMENT_VALIDATION_SERVICE_TOKEN,
+    CONTENT_SERVICE_TOKEN,
+  ],
+})
+export class CommentModule {
+  constructor() {
+    // Register Drizzle schema
+    // This will be picked up by the DatabaseModule for migration generation
+    commentSchema;
+  }
+}

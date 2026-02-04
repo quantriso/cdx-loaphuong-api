@@ -17,6 +17,7 @@ import { ContentModule } from './modules/content/content.module';
 import { CategoryModule } from './modules/category/category.module';
 import { TagModule } from './modules/tag/tag.module';
 import { FileModule } from './modules/file/file.module';
+import { CommentModule } from './modules/comment/comment.module';
 
 @Global()
 @Module({
@@ -50,6 +51,7 @@ import { FileModule } from './modules/file/file.module';
     CategoryModule,
     TagModule,
     FileModule,
+    CommentModule,
   ],
 })
 export class AppModule implements NestModule {

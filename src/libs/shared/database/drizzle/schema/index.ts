@@ -7,6 +7,7 @@
 
 import { outboxTable } from '@shared/database/outbox/drizzle/schema/outbox.schema';
 import { filesTable } from '@modules/file/infrastructure/persistence/drizzle/schema/file.schema';
+import { comments } from '@modules/comment/infrastructure/persistence/drizzle/schema/comment.schema';
 
 // TODO: Import feature module schemas as they are implemented
 // import { productsTable } from '@modules/product/infrastructure/persistence/drizzle/schema';
@@ -15,5 +16,6 @@ import { filesTable } from '@modules/file/infrastructure/persistence/drizzle/sch
 export const schema = {
   outboxTable,
   filesTable,
+  comments,
   // Feature module tables will be added here as they are implemented
 };
