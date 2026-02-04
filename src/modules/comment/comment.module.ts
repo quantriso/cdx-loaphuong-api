@@ -6,6 +6,9 @@ import {
   COMMENT_READ_DAO_TOKEN,
   COMMENT_VALIDATION_SERVICE_TOKEN,
   CONTENT_SERVICE_TOKEN,
+  CONTENT_AVAILABILITY_CHECKER_TOKEN,
+  CONTENT_AVAILABILITY_SERVICE_TOKEN,
+  THREAD_SERVICE_TOKEN,
 } from './constants';
 
 // Domain
@@ -18,10 +21,19 @@ import { CreateCommentHandler } from './application/commands/handlers/create-com
 // Application - Queries
 import { GetCommentsHandler } from './application/queries/handlers/get-comments.handler';
 import { GetCommentByIdHandler } from './application/queries/handlers/get-comment-by-id.handler';
+import { GetCommentThreadHandler } from './application/queries/handlers/get-comment-thread.handler';
 
 // Domain Services
 import { CommentValidationService } from './domain/services/comment-validation.service';
 import { ContentService } from './domain/services/content.service';
+import {
+  ContentAvailabilityService,
+  type IContentAvailabilityChecker,
+} from './domain/services/content-availability.service';
+import { ThreadService } from './domain/services/thread.service';
+
+// Infrastructure - Services
+import { ContentAvailabilityChecker } from './infrastructure/content-availability-checker';
 
 // Infrastructure - HTTP
 import { CommentController } from './infrastructure/http/comment.controller';
@@ -36,11 +48,12 @@ import * as commentSchema from './infrastructure/persistence/drizzle/schema/comm
  * Comment Module
  *
  * Story 6.1: Add comments on published content
+ * Story 6.2: Reply to comment
  *
  * This module provides functionality for:
  * - Creating comments on published content
  * - Retrieving comments for content
- * - Supporting nested comments (replies)
+ * - Supporting nested comments (replies) with thread depth validation
  * - User mentions in comments
  * - Comment moderation
  *
@@ -75,6 +88,12 @@ import * as commentSchema from './infrastructure/persistence/drizzle/schema/comm
       inject: ['DatabaseProvider'],
     },
 
+    // Infrastructure - Services (Adapters)
+    {
+      provide: CONTENT_AVAILABILITY_CHECKER_TOKEN,
+      useClass: ContentAvailabilityChecker,
+    },
+
     // Domain Services
     {
       provide: COMMENT_VALIDATION_SERVICE_TOKEN,
@@ -84,6 +103,17 @@ import * as commentSchema from './infrastructure/persistence/drizzle/schema/comm
       provide: CONTENT_SERVICE_TOKEN,
       useClass: ContentService,
     },
+    {
+      provide: CONTENT_AVAILABILITY_SERVICE_TOKEN,
+      useFactory: (checker: IContentAvailabilityChecker) => {
+        return new ContentAvailabilityService(checker);
+      },
+      inject: [CONTENT_AVAILABILITY_CHECKER_TOKEN],
+    },
+    {
+      provide: THREAD_SERVICE_TOKEN,
+      useClass: ThreadService,
+    },
 
     // Command Handlers
     CreateCommentHandler,
@@ -91,12 +121,16 @@ import * as commentSchema from './infrastructure/persistence/drizzle/schema/comm
     // Query Handlers
     GetCommentsHandler,
     GetCommentByIdHandler,
+    GetCommentThreadHandler,
   ],
   exports: [
     COMMENT_REPOSITORY_TOKEN,
     COMMENT_READ_DAO_TOKEN,
     COMMENT_VALIDATION_SERVICE_TOKEN,
     CONTENT_SERVICE_TOKEN,
+    CONTENT_AVAILABILITY_CHECKER_TOKEN,
+    CONTENT_AVAILABILITY_SERVICE_TOKEN,
+    THREAD_SERVICE_TOKEN,
   ],
 })
 export class CommentModule {

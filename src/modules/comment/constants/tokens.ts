@@ -2,6 +2,7 @@
  * Dependency Injection Tokens for Comment Module
  *
  * Story 6.1: Add comments on published content
+ * Story 6.2: Reply to comment
  *
  * Following Dependency Inversion Principle:
  * - Application layer depends on interfaces (ports)
@@ -14,3 +15,10 @@ export const COMMENT_VALIDATION_SERVICE_TOKEN = Symbol(
   'ICommentValidationService',
 );
 export const CONTENT_SERVICE_TOKEN = Symbol('IContentService');
+export const CONTENT_AVAILABILITY_CHECKER_TOKEN = Symbol(
+  'IContentAvailabilityChecker',
+);
+export const CONTENT_AVAILABILITY_SERVICE_TOKEN = Symbol(
+  'ContentAvailabilityService',
+);
+export const THREAD_SERVICE_TOKEN = Symbol('IThreadService');

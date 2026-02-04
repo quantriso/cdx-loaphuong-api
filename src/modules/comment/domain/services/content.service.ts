@@ -1,32 +1,24 @@
 import { Injectable } from '@nestjs/common';
-import type { IContentRepository } from '../../../content/domain/repositories/content.repository.interface';
 
 /**
  * Content Service
  *
  * Domain service for validating content-related operations.
- * Provides methods to check if content is published and enforce rate limiting.
+ * Provides methods to enforce rate limiting for comment creation.
+ *
+ * Note: Content availability validation (isContentPublished) has been moved
+ * to ContentAvailabilityService which uses the Port-Adapter pattern.
  */
 @Injectable()
 export class ContentService {
-  constructor(private readonly contentRepository: IContentRepository) {}
-
-  /**
-   * Check if content is published
-   * Comments can only be added to published content
-   */
-  async isContentPublished(contentId: string): Promise<boolean> {
-    const content = await this.contentRepository.getById(contentId);
-    if (!content) {
-      return false;
-    }
-    return content.status.isPublished();
-  }
-
   /**
    * Check rate limit for user
    * Prevents spam by limiting comment creation frequency
    * Default: 5 comments per minute
+   *
+   * @param userId - ID of the user creating the comment
+   * @param tenantId - Tenant ID for multi-tenancy
+   * @returns true if rate limit is exceeded, false otherwise
    */
   async checkRateLimit(userId: string, tenantId: string): Promise<boolean> {
     // TODO: Implement rate limiting with Redis or in-memory cache

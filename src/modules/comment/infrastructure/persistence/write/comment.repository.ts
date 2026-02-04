@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { type DrizzleDB } from '@shared';
+import { Injectable, Inject } from '@nestjs/common';
+import { DATABASE_WRITE_TOKEN, type DrizzleDB } from '@shared';
 import * as schema from '../drizzle/schema/comment.schema';
 import {
   Comment,
@@ -20,7 +20,10 @@ import type { CommentRepositoryInterface } from '../../../domain/repositories/co
  */
 @Injectable()
 export class CommentRepository implements CommentRepositoryInterface {
-  constructor(private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DATABASE_WRITE_TOKEN)
+    private readonly db: DrizzleDB,
+  ) {}
 
   async save(comment: Comment): Promise<void> {
     const data = comment.toPrimitives();
