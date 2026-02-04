@@ -28,6 +28,7 @@ import {
   UploadFileCommand,
   ProcessFileCommand,
   DeleteFileCommand,
+  ForceDeleteFileCommand,
   DownloadFileCommand,
   GetDownloadUrlCommand,
 } from '../../application/commands';
@@ -363,15 +364,16 @@ export class FileController {
   }
 
   /**
-   * Delete File
+   * Delete File (Soft Delete)
    *
    * Story 5.5: Delete File
    *
    * Deletes a file from storage and marks it as deleted in the database.
+   * Checks if file is attached to content before deletion.
    * Emits FileDeletedEvent upon success.
    */
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a file' })
+  @ApiOperation({ summary: 'Delete a file (checks for attachments)' })
   @ApiResponse({
     status: 200,
     description: 'File deleted successfully',
@@ -380,11 +382,44 @@ export class FileController {
     status: 404,
     description: 'File not found',
   })
+  @ApiResponse({
+    status: 400,
+    description: 'File is attached to content and cannot be deleted',
+  })
   async deleteFile(@Param('id') fileId: string, @Req() req: any) {
     const tenantId = req.user?.tenantId || 'mock-tenant-id';
+    const deletedBy = req.user?.id || 'mock-user-id';
 
-    const command = new DeleteFileCommand(fileId, tenantId, tenantId);
+    const command = new DeleteFileCommand(fileId, deletedBy, tenantId);
     await this.commandBus.execute(command);
     return { message: 'File deleted successfully' };
+  }
+
+  /**
+   * Force Delete File
+   *
+   * Story 5.5: Delete File
+   *
+   * Force deletes a file from storage without checking for attachments.
+   * This should only be used by admins or in emergency situations.
+   * Emits FileDeletedEvent upon success.
+   */
+  @Delete(':id/force')
+  @ApiOperation({ summary: 'Force delete a file (bypasses attachment checks)' })
+  @ApiResponse({
+    status: 200,
+    description: 'File force deleted successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'File not found',
+  })
+  async forceDeleteFile(@Param('id') fileId: string, @Req() req: any) {
+    const tenantId = req.user?.tenantId || 'mock-tenant-id';
+    const deletedBy = req.user?.id || 'mock-user-id';
+
+    const command = new ForceDeleteFileCommand(fileId, deletedBy);
+    await this.commandBus.execute(command);
+    return { message: 'File force deleted successfully' };
   }
 }

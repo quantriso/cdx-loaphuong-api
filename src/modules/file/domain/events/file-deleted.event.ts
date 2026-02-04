@@ -4,6 +4,10 @@ export interface FileDeletedData {
   tenantId: string;
   originalFileName: string;
   storagePath: string;
+  deletedBy?: string | null;
+  deletedAt?: Date | null;
+  isForceDelete?: boolean;
+  forceDeleteReason?: string;
 }
 
 export class FileDeletedEvent extends BaseDomainEvent<FileDeletedData> {

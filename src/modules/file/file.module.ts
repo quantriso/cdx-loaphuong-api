@@ -14,6 +14,7 @@ import { FileReadDao } from './infrastructure/persistence/read';
 
 // Infrastructure - Services
 import { FileRulesCheckerService } from './infrastructure/services';
+import { FileAttachmentCheckerServiceProvider } from './infrastructure/services';
 import { ImageProcessingService } from './infrastructure/services/image-processing.service';
 import { LocalStorageProvider } from './infrastructure/services/local-storage.provider';
 
@@ -27,6 +28,7 @@ import {
   FILE_RULES_CHECKER_TOKEN,
   FILE_VALIDATION_SERVICE_TOKEN,
   FILE_STORAGE_TOKEN,
+  FILE_ATTACHMENT_CHECKER_TOKEN,
 } from './constants';
 
 /**
@@ -62,6 +64,9 @@ import {
       provide: FILE_RULES_CHECKER_TOKEN,
       useExisting: FileRulesCheckerService,
     },
+
+    // File Attachment Checker (Story 5.5: Delete File)
+    FileAttachmentCheckerServiceProvider,
 
     // Image Processing Service (Story 5.3: Process Uploaded Images)
     ImageProcessingService,
@@ -118,6 +123,7 @@ import {
     FILE_RULES_CHECKER_TOKEN,
     FILE_VALIDATION_SERVICE_TOKEN,
     FILE_STORAGE_TOKEN,
+    FILE_ATTACHMENT_CHECKER_TOKEN,
   ],
 })
 export class FileModule {}

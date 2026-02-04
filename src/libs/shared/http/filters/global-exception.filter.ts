@@ -93,7 +93,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     // Map specific domain exception codes to appropriate HTTP status codes
     let status = HttpStatus.BAD_REQUEST;
 
-    if (exception.code === 'FILE_NOT_FOUND') {
+    if (
+      exception.code === 'FILE_NOT_FOUND' ||
+      exception.code === 'FILE_ALREADY_DELETED'
+    ) {
       status = HttpStatus.NOT_FOUND;
     }
 

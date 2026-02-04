@@ -7,6 +7,7 @@ import {
   integer,
   index,
   text,
+  boolean,
 } from 'drizzle-orm/pg-core';
 
 /**
@@ -32,7 +33,9 @@ export const filesTable = pgTable(
     thumbnailPath: varchar('thumbnail_path', { length: 500 }),
     processedMetadata: jsonb('processed_metadata'), // Image dimensions, format info, etc.
     uploadedBy: varchar('uploaded_by', { length: 36 }).notNull(),
+    isDeleted: boolean('is_deleted').notNull().default(false),
     deletedAt: timestamp('deleted_at'),
+    deletedBy: varchar('deleted_by', { length: 36 }),
     version: integer('version').notNull().default(1),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),

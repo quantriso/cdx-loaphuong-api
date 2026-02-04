@@ -1,4 +1,9 @@
-import { AggregateRoot, DomainException } from '@core/domain';
+import {
+  AggregateRoot,
+  DomainException,
+  ISoftDeletable,
+  IEventMetadata,
+} from '@core/domain';
 import { FileId } from '../value-objects/file-id.value-object';
 import { FileType } from '../value-objects/file-type.value-object';
 import { FileUploadedEvent } from '../events/file-uploaded.event';
@@ -18,16 +23,24 @@ export interface FileProps {
   thumbnailPath?: string;
   processedMetadata?: Record<string, any>;
   uploadedBy: string;
+  isDeleted: boolean;
   deletedAt?: Date | null;
+  deletedBy?: string | null;
   version?: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export class File extends AggregateRoot {
+export class File extends AggregateRoot implements ISoftDeletable {
   private _props: FileProps;
+  private _deletedAt?: Date | null = null;
 
-  private constructor(id: FileId, props: FileProps, version?: number) {
+  private constructor(
+    id: FileId,
+    props: FileProps,
+    version?: number,
+    deletedAt?: Date | null,
+  ) {
     super(
       id.value,
       version !== undefined ? version : props.version || 1,
@@ -35,6 +48,7 @@ export class File extends AggregateRoot {
       props.updatedAt,
     );
     this._props = props;
+    this._deletedAt = deletedAt;
   }
 
   static createNew(
@@ -73,13 +87,15 @@ export class File extends AggregateRoot {
       thumbnailPath: undefined,
       processedMetadata: undefined,
       uploadedBy,
+      isDeleted: false,
       deletedAt: null,
+      deletedBy: null,
       version: 1, // New entities start with version 1
       createdAt: now,
       updatedAt: now,
     };
 
-    const file = new File(id, props, 0); // Pass version 0 for new entities (triggers INSERT)
+    const file = new File(id, props, 0, null); // Pass version 0 for new entities (triggers INSERT)
     file.addDomainEvent(
       new FileUploadedEvent(id.value, {
         tenantId,
@@ -96,14 +112,75 @@ export class File extends AggregateRoot {
   }
 
   static reconstitute(props: FileProps): File {
-    return new File(new FileId(props.id), props);
+    return new File(
+      new FileId(props.id),
+      props,
+      props.version,
+      props.deletedAt,
+    );
   }
+
+  // --- Soft Delete Implementation (ISoftDeletable) ---
+
+  get deletedAt(): Date | null | undefined {
+    return this._deletedAt;
+  }
+
+  get isDeleted(): boolean {
+    return !!this._deletedAt;
+  }
+
+  /**
+   * Soft delete the file
+   * Emits FileDeletedEvent
+   *
+   * @param deletedBy - User ID who performed the deletion (optional)
+   * @param metadata - Event metadata (optional)
+   */
+  public delete(deletedBy?: string, metadata?: IEventMetadata): void {
+    if (this.isDeleted) return;
+
+    this._deletedAt = new Date();
+    this._props.isDeleted = true;
+    this._props.deletedBy = deletedBy || null;
+    this._props.updatedAt = new Date();
+
+    this.addDomainEvent(
+      new FileDeletedEvent(
+        this.id,
+        {
+          tenantId: this.tenantId,
+          originalFileName: this.originalFileName,
+          storagePath: this.storagePath,
+          deletedBy: this._props.deletedBy,
+          deletedAt: this._deletedAt,
+          isForceDelete: false,
+        },
+        metadata,
+      ),
+    );
+  }
+
+  /**
+   * Restore a soft-deleted file
+   */
+  public restore(): void {
+    if (!this.isDeleted) return;
+
+    this._deletedAt = null;
+    this._props.isDeleted = false;
+    this._props.updatedAt = new Date();
+  }
+
+  // --- Business Behaviors ---
 
   markAsProcessed(
     processedPath: string,
     thumbnailPath?: string,
     metadata?: Record<string, any>,
   ): void {
+    this.ensureNotDeleted();
+
     if (!this.fileType.isImage()) {
       throw new DomainException(
         'Only image files can be processed',
@@ -127,8 +204,12 @@ export class File extends AggregateRoot {
     );
   }
 
-  softDelete(): void {
-    this._props.deletedAt = new Date();
+  forceDelete(deletedBy: string, reason?: string): void {
+    this.ensureNotDeleted();
+
+    this._deletedAt = new Date();
+    this._props.isDeleted = true;
+    this._props.deletedBy = deletedBy;
     this._props.updatedAt = new Date();
     this.incrementVersion();
 
@@ -137,8 +218,19 @@ export class File extends AggregateRoot {
         tenantId: this.tenantId,
         originalFileName: this.originalFileName,
         storagePath: this.storagePath,
+        deletedBy: this._props.deletedBy,
+        deletedAt: this._deletedAt,
+        isForceDelete: true,
+        forceDeleteReason: reason,
       }),
     );
+  }
+
+  /**
+   * Check if file can be deleted (tenant validation)
+   */
+  canBeDeleted(tenantId: string): boolean {
+    return this.tenantId === tenantId && !this.isDeleted;
   }
 
   private static validate({
@@ -236,19 +328,18 @@ export class File extends AggregateRoot {
     return this._props.uploadedBy;
   }
 
-  get deletedAt(): Date | null | undefined {
-    return this._props.deletedAt;
-  }
-
   // Private helper methods
   private incrementVersion(): void {
     this._props.version = (this._props.version || 1) + 1;
   }
 
-  // Public helper methods
-  isDeleted(): boolean {
-    return (
-      this._props.deletedAt !== null && this._props.deletedAt !== undefined
-    );
+  private ensureNotDeleted(): void {
+    if (this.isDeleted) {
+      throw new DomainException('Cannot modify deleted file');
+    }
+  }
+
+  get deletedBy(): string | null | undefined {
+    return this._props.deletedBy;
   }
 }
