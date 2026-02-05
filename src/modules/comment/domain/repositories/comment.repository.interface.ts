@@ -71,4 +71,28 @@ export interface CommentRepositoryInterface {
     limit: number;
     includeReplies?: boolean;
   }): Promise<{ comments: Comment[]; total: number }>;
+
+  /**
+   * Increment like count for a comment
+   * Story 6.3: Like/dislike comment
+   */
+  incrementLikeCount(commentId: string): Promise<void>;
+
+  /**
+   * Decrement like count for a comment
+   * Story 6.3: Like/dislike comment
+   */
+  decrementLikeCount(commentId: string): Promise<void>;
+
+  /**
+   * Increment dislike count for a comment
+   * Story 6.3: Like/dislike comment
+   */
+  incrementDislikeCount(commentId: string): Promise<void>;
+
+  /**
+   * Decrement dislike count for a comment
+   * Story 6.3: Like/dislike comment
+   */
+  decrementDislikeCount(commentId: string): Promise<void>;
 }

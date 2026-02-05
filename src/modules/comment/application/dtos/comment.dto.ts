@@ -31,6 +31,12 @@ export class CommentDto {
   /** Array of mentioned user IDs */
   mentions?: string[];
 
+  /** Number of likes for this comment */
+  likeCount: number;
+
+  /** Number of dislikes for this comment */
+  dislikeCount: number;
+
   /** Creation timestamp */
   createdAt: Date;
 
@@ -49,6 +55,8 @@ export class CommentDto {
     tenantId: string,
     moderationStatus: ModerationStatus,
     mentions: string[] | undefined,
+    likeCount: number,
+    dislikeCount: number,
     createdAt: Date,
     updatedAt: Date,
     replies?: CommentDto[],
@@ -61,6 +69,8 @@ export class CommentDto {
     this.tenantId = tenantId;
     this.moderationStatus = moderationStatus;
     this.mentions = mentions;
+    this.likeCount = likeCount;
+    this.dislikeCount = dislikeCount;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
     this.replies = replies;
@@ -78,6 +88,8 @@ export class CommentDto {
     tenantId: string;
     moderationStatus: ModerationStatus;
     mentions: string[] | null;
+    likeCount: number;
+    dislikeCount: number;
     createdAt: Date;
     updatedAt: Date;
   }): CommentDto {
@@ -90,6 +102,8 @@ export class CommentDto {
       data.tenantId,
       data.moderationStatus,
       data.mentions || undefined,
+      data.likeCount || 0,
+      data.dislikeCount || 0,
       data.createdAt,
       data.updatedAt,
     );
@@ -124,4 +138,41 @@ export class CommentListDto {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+/**
+ * DTO for voting on a comment
+ *
+ * Story 6.3: Like/dislike comment
+ */
+export class VoteRequestDto {
+  /** Vote type: 'LIKE' or 'DISLIKE' */
+  voteType: 'LIKE' | 'DISLIKE';
+}
+
+/**
+ * DTO for vote response
+ *
+ * Story 6.3: Like/dislike comment
+ * Returns the updated comment with new vote counts
+ */
+export class VoteResponseDto {
+  /** The updated comment with new vote counts */
+  comment: CommentDto;
+
+  /** Whether the user has voted (true) or removed vote (false) */
+  voted: boolean;
+
+  /** The type of vote cast */
+  voteType?: 'LIKE' | 'DISLIKE';
+}
+
+/**
+ * DTO for removing a vote
+ *
+ * Story 6.3: Like/dislike comment
+ */
+export class RemoveVoteResponseDto {
+  /** The updated comment with new vote counts */
+  comment: CommentDto;
 }

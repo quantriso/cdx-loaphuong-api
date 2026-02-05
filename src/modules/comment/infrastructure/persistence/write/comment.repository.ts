@@ -7,7 +7,7 @@ import {
   ModerationStatus,
 } from '../../../domain/entities/comment.entity';
 import { CommentId } from '../../../domain/value-objects/comment-id.value-object';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import type { CommentRepositoryInterface } from '../../../domain/repositories/comment.repository.interface';
 
 /**
@@ -37,6 +37,8 @@ export class CommentRepository implements CommentRepositoryInterface {
       parentCommentId: data.parentCommentId || null,
       moderationStatus: data.moderationStatus,
       mentions: data.mentions || [],
+      likeCount: data.likeCount,
+      dislikeCount: data.dislikeCount,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     });
@@ -50,6 +52,8 @@ export class CommentRepository implements CommentRepositoryInterface {
       .set({
         content: data.content.value,
         moderationStatus: data.moderationStatus,
+        likeCount: data.likeCount,
+        dislikeCount: data.dislikeCount,
         updatedAt: data.updatedAt,
       })
       .where(eq(schema.comments.id, data.id));
@@ -185,6 +189,70 @@ export class CommentRepository implements CommentRepositoryInterface {
     return result.length;
   }
 
+  /**
+   * Increment like count for a comment
+   *
+   * Story 6.3: Like/dislike comment
+   * Atomically increments the like count
+   */
+  async incrementLikeCount(commentId: string): Promise<void> {
+    await this.db
+      .update(schema.comments)
+      .set({
+        likeCount: sql`${schema.comments.likeCount} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.comments.id, commentId));
+  }
+
+  /**
+   * Decrement like count for a comment
+   *
+   * Story 6.3: Like/dislike comment
+   * Atomically decrements the like count
+   */
+  async decrementLikeCount(commentId: string): Promise<void> {
+    await this.db
+      .update(schema.comments)
+      .set({
+        likeCount: sql`CASE WHEN ${schema.comments.likeCount} > 0 THEN ${schema.comments.likeCount} - 1 ELSE 0 END`,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.comments.id, commentId));
+  }
+
+  /**
+   * Increment dislike count for a comment
+   *
+   * Story 6.3: Like/dislike comment
+   * Atomically increments the dislike count
+   */
+  async incrementDislikeCount(commentId: string): Promise<void> {
+    await this.db
+      .update(schema.comments)
+      .set({
+        dislikeCount: sql`${schema.comments.dislikeCount} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.comments.id, commentId));
+  }
+
+  /**
+   * Decrement dislike count for a comment
+   *
+   * Story 6.3: Like/dislike comment
+   * Atomically decrements the dislike count
+   */
+  async decrementDislikeCount(commentId: string): Promise<void> {
+    await this.db
+      .update(schema.comments)
+      .set({
+        dislikeCount: sql`CASE WHEN ${schema.comments.dislikeCount} > 0 THEN ${schema.comments.dislikeCount} - 1 ELSE 0 END`,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.comments.id, commentId));
+  }
+
   async findPaginated(params: {
     contentId?: string;
     tenantId: string;
@@ -252,6 +320,8 @@ export class CommentRepository implements CommentRepositoryInterface {
       moderationStatus: row.moderationStatus as ModerationStatus,
       parentCommentId: row.parentCommentId || undefined,
       mentions: row.mentions || [],
+      likeCount: row.likeCount || 0,
+      dislikeCount: row.dislikeCount || 0,
       createdAt: new Date(row.createdAt),
       updatedAt: new Date(row.updatedAt),
     };

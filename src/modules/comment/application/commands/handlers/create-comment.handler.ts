@@ -1,3 +1,4 @@
+import { Inject } from '@nestjs/common';
 import { ICommandHandler, CommandHandler } from '@nestjs/cqrs';
 import { CreateCommentCommand } from '../create-comment.command';
 import type { CommentRepositoryInterface } from '../../../domain/repositories/comment.repository.interface';
@@ -10,6 +11,12 @@ import { ThreadService } from '../../../domain/services/thread.service';
 import { RateLimitExceededException } from '../../../domain/exceptions/rate-limit-exceeded.exception';
 import { CommentNotFoundException } from '../../../domain/exceptions/comment-not-found.exception';
 import { ReplyNotificationEvent } from '../../../domain/events/reply-notification.event';
+import {
+  COMMENT_REPOSITORY_TOKEN,
+  CONTENT_SERVICE_TOKEN,
+  CONTENT_AVAILABILITY_SERVICE_TOKEN,
+  THREAD_SERVICE_TOKEN,
+} from '../../../constants/tokens';
 
 /**
  * Create Comment Handler
@@ -24,9 +31,13 @@ import { ReplyNotificationEvent } from '../../../domain/events/reply-notificatio
 @CommandHandler(CreateCommentCommand)
 export class CreateCommentHandler implements ICommandHandler<CreateCommentCommand> {
   constructor(
+    @Inject(COMMENT_REPOSITORY_TOKEN)
     private readonly commentRepository: CommentRepositoryInterface,
+    @Inject(CONTENT_SERVICE_TOKEN)
     private readonly contentService: ContentService,
+    @Inject(CONTENT_AVAILABILITY_SERVICE_TOKEN)
     private readonly contentAvailabilityService: ContentAvailabilityService,
+    @Inject(THREAD_SERVICE_TOKEN)
     private readonly threadService: ThreadService,
   ) {}
 

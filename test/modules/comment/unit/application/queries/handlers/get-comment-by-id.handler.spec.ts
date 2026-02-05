@@ -20,6 +20,8 @@ describe('GetCommentByIdHandler', () => {
     parentId: null,
     tenantId: 'tenant-123',
     moderationStatus: ModerationStatus.APPROVED,
+    likeCount: 0,
+    dislikeCount: 0,
     createdAt: new Date('2024-01-01T00:00:00Z'),
     updatedAt: new Date('2024-01-01T00:00:00Z'),
   };

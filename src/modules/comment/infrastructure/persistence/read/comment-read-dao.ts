@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import type { DrizzleDB } from '@shared';
+import { Injectable, Inject } from '@nestjs/common';
+import { DATABASE_READ_TOKEN, type DrizzleDB } from '@shared';
 import { eq, and, desc } from 'drizzle-orm';
 import * as schema from '../drizzle/schema/comment.schema';
 import type { ICommentReadDaoPort } from '../../../application/queries/ports/comment-read-dao.interface';
@@ -18,7 +18,10 @@ import { CommentDto } from '../../../application/dtos/comment.dto';
  */
 @Injectable()
 export class CommentReadDao implements ICommentReadDaoPort {
-  constructor(private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DATABASE_READ_TOKEN)
+    private readonly db: DrizzleDB,
+  ) {}
 
   async findPaginated(params: {
     contentId?: string;
@@ -189,6 +192,8 @@ export class CommentReadDao implements ICommentReadDaoPort {
       mentions: row.mentions || [],
       parentId: row.parentCommentId || null,
       moderationStatus: row.moderationStatus,
+      likeCount: row.likeCount || 0,
+      dislikeCount: row.dislikeCount || 0,
       createdAt: new Date(row.createdAt),
       updatedAt: new Date(row.updatedAt),
     });

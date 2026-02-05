@@ -25,6 +25,10 @@ describe('ThreadService', () => {
       findByModerationStatus: jest.fn(),
       exists: jest.fn(),
       countByContentId: jest.fn(),
+      incrementLikeCount: jest.fn(),
+      decrementLikeCount: jest.fn(),
+      incrementDislikeCount: jest.fn(),
+      decrementDislikeCount: jest.fn(),
     } as jest.Mocked<CommentRepositoryInterface>;
 
     service = new ThreadService(mockRepository);

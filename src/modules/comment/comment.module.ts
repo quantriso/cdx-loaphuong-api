@@ -4,6 +4,8 @@ import { ContentModule } from '../content/content.module';
 import {
   COMMENT_REPOSITORY_TOKEN,
   COMMENT_READ_DAO_TOKEN,
+  COMMENT_VOTE_REPOSITORY_TOKEN,
+  COMMENT_VOTE_READ_DAO_TOKEN,
   COMMENT_VALIDATION_SERVICE_TOKEN,
   CONTENT_SERVICE_TOKEN,
   CONTENT_AVAILABILITY_CHECKER_TOKEN,
@@ -14,14 +16,20 @@ import {
 // Domain
 import { CommentRepository } from './infrastructure/persistence/write/comment.repository';
 import type { CommentRepositoryInterface } from './domain/repositories/comment.repository.interface';
+import { CommentVoteRepository } from './infrastructure/persistence/write/comment-vote.repository';
+import type { ICommentVoteRepository } from './domain/repositories/comment-vote.repository.interface';
 
 // Application - Commands
 import { CreateCommentHandler } from './application/commands/handlers/create-comment.handler';
+import { VoteCommentHandler } from './application/commands/handlers/vote-comment.handler';
+import { RemoveVoteHandler } from './application/commands/handlers/remove-vote.handler';
 
 // Application - Queries
 import { GetCommentsHandler } from './application/queries/handlers/get-comments.handler';
 import { GetCommentByIdHandler } from './application/queries/handlers/get-comment-by-id.handler';
 import { GetCommentThreadHandler } from './application/queries/handlers/get-comment-thread.handler';
+import { GetCommentVotesHandler } from './application/queries/handlers/get-comment-votes.handler';
+import { GetUserVoteForCommentHandler } from './application/queries/handlers/get-user-vote-for-comment.handler';
 
 // Domain Services
 import { CommentValidationService } from './domain/services/comment-validation.service';
@@ -40,6 +48,7 @@ import { CommentController } from './infrastructure/http/comment.controller';
 
 // Infrastructure - Persistence - Read (CQRS)
 import { CommentReadDao } from './infrastructure/persistence/read/comment-read-dao';
+import { CommentVoteReadDao } from './infrastructure/persistence/read/comment-vote-read-dao';
 
 // Infrastructure - Schema
 import * as commentSchema from './infrastructure/persistence/drizzle/schema/comment.schema';
@@ -49,6 +58,7 @@ import * as commentSchema from './infrastructure/persistence/drizzle/schema/comm
  *
  * Story 6.1: Add comments on published content
  * Story 6.2: Reply to comment
+ * Story 6.3: Like/dislike comment
  *
  * This module provides functionality for:
  * - Creating comments on published content
@@ -56,6 +66,7 @@ import * as commentSchema from './infrastructure/persistence/drizzle/schema/comm
  * - Supporting nested comments (replies) with thread depth validation
  * - User mentions in comments
  * - Comment moderation
+ * - Like/dislike comments
  *
  * Architecture:
  * - Domain: Entity, value objects, domain services, events
@@ -67,25 +78,37 @@ import * as commentSchema from './infrastructure/persistence/drizzle/schema/comm
   controllers: [CommentController],
   providers: [
     // Repository (Write side - CQRS)
+    CommentRepository,
     {
       provide: COMMENT_REPOSITORY_TOKEN,
-      useFactory: (db) => {
-        return new CommentRepository(db);
-      },
-      inject: ['DatabaseProvider'],
+      useExisting: CommentRepository,
     },
     {
       provide: 'CommentRepositoryInterface',
       useExisting: COMMENT_REPOSITORY_TOKEN,
     },
 
+    // Vote Repository (Write side - CQRS)
+    CommentVoteRepository,
+    {
+      provide: COMMENT_VOTE_REPOSITORY_TOKEN,
+      useExisting: CommentVoteRepository,
+    },
+    {
+      provide: 'ICommentVoteRepository',
+      useExisting: COMMENT_VOTE_REPOSITORY_TOKEN,
+    },
+
     // Read DAO (Query side - CQRS)
+    CommentReadDao,
     {
       provide: COMMENT_READ_DAO_TOKEN,
-      useFactory: (db) => {
-        return new CommentReadDao(db);
-      },
-      inject: ['DatabaseProvider'],
+      useExisting: CommentReadDao,
+    },
+    CommentVoteReadDao,
+    {
+      provide: COMMENT_VOTE_READ_DAO_TOKEN,
+      useExisting: CommentVoteReadDao,
     },
 
     // Infrastructure - Services (Adapters)
@@ -117,15 +140,20 @@ import * as commentSchema from './infrastructure/persistence/drizzle/schema/comm
 
     // Command Handlers
     CreateCommentHandler,
+    VoteCommentHandler,
+    RemoveVoteHandler,
 
     // Query Handlers
     GetCommentsHandler,
     GetCommentByIdHandler,
     GetCommentThreadHandler,
+    GetCommentVotesHandler,
+    GetUserVoteForCommentHandler,
   ],
   exports: [
     COMMENT_REPOSITORY_TOKEN,
     COMMENT_READ_DAO_TOKEN,
+    COMMENT_VOTE_REPOSITORY_TOKEN,
     COMMENT_VALIDATION_SERVICE_TOKEN,
     CONTENT_SERVICE_TOKEN,
     CONTENT_AVAILABILITY_CHECKER_TOKEN,

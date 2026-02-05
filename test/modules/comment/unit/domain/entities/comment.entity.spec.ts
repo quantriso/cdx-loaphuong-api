@@ -104,6 +104,8 @@ describe('Comment Entity', () => {
         parentCommentId,
         moderationStatus,
         mentions,
+        likeCount: 0,
+        dislikeCount: 0,
         createdAt,
         updatedAt,
       });

@@ -1,9 +1,11 @@
+import { Inject } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetCommentThreadQuery } from '../../queries/get-comment-thread.query';
 import { CommentId } from '../../../domain/value-objects/comment-id.value-object';
 import { ThreadService } from '../../../domain/services/thread.service';
 import { CommentNotFoundException } from '../../../domain/exceptions/comment-not-found.exception';
 import type { CommentThreadDto } from '../../dtos/thread.dto';
+import { THREAD_SERVICE_TOKEN } from '../../../constants/tokens';
 
 /**
  * Get Comment Thread Handler
@@ -18,7 +20,10 @@ export class GetCommentThreadHandler implements IQueryHandler<
   GetCommentThreadQuery,
   CommentThreadDto
 > {
-  constructor(private readonly threadService: ThreadService) {}
+  constructor(
+    @Inject(THREAD_SERVICE_TOKEN)
+    private readonly threadService: ThreadService,
+  ) {}
 
   async execute(query: GetCommentThreadQuery): Promise<CommentThreadDto> {
     const { commentId } = query;

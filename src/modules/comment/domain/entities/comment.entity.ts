@@ -19,6 +19,8 @@ export interface CommentProps {
   tenantId: string;
   moderationStatus: ModerationStatus;
   mentions?: string[];
+  likeCount: number;
+  dislikeCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -71,6 +73,14 @@ export class Comment extends AggregateRoot {
     return this._props.updatedAt;
   }
 
+  get likeCount(): number {
+    return this._props.likeCount;
+  }
+
+  get dislikeCount(): number {
+    return this._props.dislikeCount;
+  }
+
   static create(
     contentId: string,
     authorId: string,
@@ -91,6 +101,8 @@ export class Comment extends AggregateRoot {
       tenantId,
       moderationStatus: ModerationStatus.PENDING,
       mentions,
+      likeCount: 0,
+      dislikeCount: 0,
       createdAt: now,
       updatedAt: now,
     };
@@ -155,6 +167,30 @@ export class Comment extends AggregateRoot {
     return !!this._props.parentCommentId;
   }
 
+  incrementLikeCount(): void {
+    this._props.likeCount++;
+    this.updateTimestamp();
+  }
+
+  decrementLikeCount(): void {
+    if (this._props.likeCount > 0) {
+      this._props.likeCount--;
+      this.updateTimestamp();
+    }
+  }
+
+  incrementDislikeCount(): void {
+    this._props.dislikeCount++;
+    this.updateTimestamp();
+  }
+
+  decrementDislikeCount(): void {
+    if (this._props.dislikeCount > 0) {
+      this._props.dislikeCount--;
+      this.updateTimestamp();
+    }
+  }
+
   toPrimitives(): CommentProps {
     return {
       id: this._props.id,
@@ -165,6 +201,8 @@ export class Comment extends AggregateRoot {
       tenantId: this._props.tenantId,
       moderationStatus: this._props.moderationStatus,
       mentions: this._props.mentions,
+      likeCount: this._props.likeCount,
+      dislikeCount: this._props.dislikeCount,
       createdAt: this._props.createdAt,
       updatedAt: this._props.updatedAt,
     };

@@ -1,15 +1,24 @@
-import { pgTable, text, timestamp, varchar, index } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  text,
+  timestamp,
+  varchar,
+  index,
+  integer,
+} from 'drizzle-orm/pg-core';
 
 /**
  * Comments Table Schema
  *
  * Story 6.1: Add comments on published content
+ * Story 6.3: Like/dislike comment
  *
  * Stores comment data with support for:
  * - Root comments and replies (parentCommentId)
  * - Moderation status tracking
  * - User mentions
  * - Multi-tenancy support
+ * - Like/dislike vote counts
  */
 export const comments = pgTable(
   'comments',
@@ -24,6 +33,9 @@ export const comments = pgTable(
       .notNull()
       .default('PENDING'),
     mentions: text('mentions').array(),
+    likeCount: integer('like_count').notNull().default(0),
+    dislikeCount: integer('dislike_count').notNull().default(0),
+    version: integer('version').notNull().default(1),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
